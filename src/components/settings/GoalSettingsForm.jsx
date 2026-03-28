@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
-import { useAuth } from "../../context/AuthContext";
 import { useSettings } from "../../hooks/useSettings";
 import { useLanguage } from "../../context/LanguageContext";
+import { useWorkspace } from "../../context/WorkspaceContext";
 
 const GoalSettingsForm = () => {
-  const { user } = useAuth();
-  const settings = useSettings(user);
+  const { activeWorkspaceId, isLegacyMode } = useWorkspace();
+  const settings = useSettings();
   const { t } = useLanguage();
   const locale = "es-AR";
   const [savingsGoal, setSavingsGoal] = useState(0);
@@ -24,14 +24,20 @@ const GoalSettingsForm = () => {
   }, [settings]);
 
   const handleSave = async () => {
-    if (!user) {
+    if (!activeWorkspaceId) {
       return;
     }
 
     try {
       setSaving(true);
 
-      const settingsReference = doc(db, "users", user.uid, "settings", "config");
+      const settingsReference = doc(
+        db,
+        isLegacyMode ? "users" : "workspaces",
+        activeWorkspaceId,
+        "settings",
+        "config"
+      );
       await updateDoc(settingsReference, {
         savingsGoal: Number(savingsGoal),
         expenseLimit: Number(expenseLimit)

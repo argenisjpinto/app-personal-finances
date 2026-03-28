@@ -13,14 +13,20 @@ import {
   limit
 } from "firebase/firestore";
 import { db } from "../config/firebase";
+import { useWorkspace } from "../context/WorkspaceContext";
 
-export const useCurrencies = (user) => {
+export const useCurrencies = () => {
+  const { activeWorkspaceId, isLegacyMode } = useWorkspace();
   const [currencies, setCurrencies] = useState([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!activeWorkspaceId) {
+      setCurrencies([]);
+      return;
+    }
 
-    const ref = collection(db, "users", user.uid, "currencies");
+    const scopeRoot = isLegacyMode ? "users" : "workspaces";
+    const ref = collection(db, scopeRoot, activeWorkspaceId, "currencies");
 
     const unsubscribe = onSnapshot(ref, snapshot => {
       const data = snapshot.docs.map(doc => ({
@@ -31,13 +37,13 @@ export const useCurrencies = (user) => {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [activeWorkspaceId, isLegacyMode]);
 
   const addCurrency = async (currency) => {
     const docRef = doc(
       db,
-      "users",
-      user.uid,
+      isLegacyMode ? "users" : "workspaces",
+      activeWorkspaceId,
       "currencies",
       currency.code
     );
@@ -50,7 +56,7 @@ export const useCurrencies = (user) => {
   };
 
   const isCurrencyUsed = async (code) => {
-    const txRef = collection(db, "users", user.uid, "transactions");
+    const txRef = collection(db, isLegacyMode ? "users" : "workspaces", activeWorkspaceId, "transactions");
 
     const q = query(
         txRef,
@@ -74,7 +80,7 @@ export const useCurrencies = (user) => {
       }
     }
 
-    const ref = doc(db, "users", user.uid, "currencies", id);
+    const ref = doc(db, isLegacyMode ? "users" : "workspaces", activeWorkspaceId, "currencies", id);
     await updateDoc(ref, updates);
   };
 
@@ -86,7 +92,7 @@ export const useCurrencies = (user) => {
       return;
     }
 
-    const ref = doc(db, "users", user.uid, "currencies", id);
+    const ref = doc(db, isLegacyMode ? "users" : "workspaces", activeWorkspaceId, "currencies", id);
     await deleteDoc(ref);
   };
 

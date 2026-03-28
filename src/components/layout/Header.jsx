@@ -1,16 +1,38 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useWorkspace } from "../../context/WorkspaceContext";
 import { useDarkMode } from "../../hooks/useDarkMode";
 import { useSettings } from "../../hooks/useSettings";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../styles/Dashboard.css";
 
+const renderWorkspaceSwitch = (workspaces, activeWorkspace, onChange) => (
+  <div className="workspace-switcher">
+    {workspaces.map((workspace) => (
+      <button
+        key={workspace.workspaceId}
+        type="button"
+        className={
+          workspace.workspaceId === activeWorkspace?.workspaceId
+            ? "workspace-switcher-button active"
+            : "workspace-switcher-button"
+        }
+        onClick={() => onChange(workspace.workspaceId)}
+      >
+        <span>{workspace.workspaceName}</span>
+        <small>{workspace.workspaceType}</small>
+      </button>
+    ))}
+  </div>
+);
+
 const Header = () => {
   const { logout, user } = useAuth();
+  const { activeWorkspace, setActiveWorkspaceId, workspaces } = useWorkspace();
   const { darkMode, setDarkMode } = useDarkMode();
   const location = useLocation();
   const navigate = useNavigate();
-  const settings = useSettings(user);
+  const settings = useSettings();
   const { t } = useLanguage();
 
   const isAuthPage = location.pathname === "/register-login";
@@ -24,9 +46,9 @@ const Header = () => {
   const displayName = user?.displayName?.split(" ")[0] || "Adia";
   const avatarLabel = displayName.slice(0, 1).toUpperCase();
   const baseCurrency = settings?.baseCurrency || "USD";
-
   const isMovementsRoute = location.pathname.startsWith("/movements");
   const isDashboardRoute = location.pathname.startsWith("/dashboard");
+  const visibleWorkspaces = workspaces;
 
   const openTransactionModal = () => {
     window.dispatchEvent(new CustomEvent("open-transaction-modal"));
@@ -45,15 +67,13 @@ const Header = () => {
     return (
       <>
         <aside className="app-sidebar">
-            <Link to="/dashboard" className="adia-brand">
+          <Link to="/dashboard" className="adia-brand">
             <span className="adia-brand-mark">
               <span className="material-symbols-outlined">insights</span>
             </span>
             <span className="adia-brand-copy">
               <span className="adia-brand-title">Adia Finance</span>
-              <span className="adia-brand-subtitle">
-                {t("header.brandSubtitleApp")}
-              </span>
+              <span className="adia-brand-subtitle">{t("header.brandSubtitleApp")}</span>
             </span>
           </Link>
 
@@ -99,6 +119,13 @@ const Header = () => {
             </NavLink>
           </nav>
 
+          {activeWorkspace && visibleWorkspaces.length ? (
+            <section className="sidebar-workspaces-card">
+              <p className="sidebar-health-title">Espacios</p>
+              {renderWorkspaceSwitch(visibleWorkspaces, activeWorkspace, setActiveWorkspaceId)}
+            </section>
+          ) : null}
+
           <div className="sidebar-health-card">
             <p className="sidebar-health-title">{t("header.portfolioHealth")}</p>
             <div className="sidebar-health-track">
@@ -119,97 +146,100 @@ const Header = () => {
         </aside>
 
         <header className="app-topbar">
-          <div className="app-topbar-left">
-            <div className="app-pill">
-              <span className="material-symbols-outlined">payments</span>
-              <span>
-                <strong>{baseCurrency}</strong> · {t("header.baseCurrency")}
-              </span>
+          <div className="app-topbar-main">
+            <div className="app-topbar-left">
+              <div className="app-pill">
+                <span className="material-symbols-outlined">payments</span>
+                <span>
+                  <strong>{baseCurrency}</strong> · {t("header.baseCurrency")}
+                </span>
+              </div>
+
+              <nav className="app-topbar-section-nav">
+                <Link to="/dashboard#dashboard-overview" className="app-topbar-section-link">
+                  {t("header.overview")}
+                </Link>
+                <NavLink
+                  to="/movements"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "app-topbar-section-link active"
+                      : "app-topbar-section-link"
+                  }
+                >
+                  {t("header.transactions")}
+                </NavLink>
+                <NavLink
+                  to="/goals"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "app-topbar-section-link active"
+                      : "app-topbar-section-link"
+                  }
+                >
+                  {t("header.goals")}
+                </NavLink>
+                <NavLink
+                  to="/settings"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "app-topbar-section-link active"
+                      : "app-topbar-section-link"
+                  }
+                >
+                  {t("header.settings")}
+                </NavLink>
+              </nav>
             </div>
 
-            <nav className="app-topbar-section-nav">
-              <Link to="/dashboard#dashboard-overview" className="app-topbar-section-link">
-                {t("header.overview")}
-              </Link>
-              <NavLink
-                to="/movements"
-                className={({ isActive }) =>
-                  isActive
-                    ? "app-topbar-section-link active"
-                    : "app-topbar-section-link"
-                }
-              >
-                {t("header.transactions")}
-              </NavLink>
-              <NavLink
-                to="/goals"
-                className={({ isActive }) =>
-                  isActive
-                    ? "app-topbar-section-link active"
-                    : "app-topbar-section-link"
-                }
-              >
-                {t("header.goals")}
-              </NavLink>
-              <NavLink
-                to="/settings"
-                className={({ isActive }) =>
-                  isActive
-                    ? "app-topbar-section-link active"
-                    : "app-topbar-section-link"
-                }
-              >
-                {t("header.settings")}
-              </NavLink>
-            </nav>
-          </div>
-
-          <div className="app-topbar-right">
-            <button
-              type="button"
-              className="topbar-icon-button"
-              onClick={() => setDarkMode(!darkMode)}
-              aria-label="Alternar modo oscuro"
-            >
-              <span className="material-symbols-outlined">
-                {darkMode ? "light_mode" : "dark_mode"}
-              </span>
-            </button>
-
-            {isMovementsRoute ? (
+            <div className="app-topbar-right">
               <button
                 type="button"
-                className="adia-button adia-button-primary"
-                onClick={openTransactionModal}
+                className="topbar-icon-button"
+                onClick={() => setDarkMode(!darkMode)}
+                aria-label="Alternar modo oscuro"
               >
-                <span className="material-symbols-outlined">add</span>
-                <span>{t("header.newTransaction")}</span>
-              </button>
-            ) : (
-              <Link to={isDashboardRoute ? "/movements" : "/dashboard"} className="adia-button adia-button-primary">
                 <span className="material-symbols-outlined">
-                  {isDashboardRoute ? "swap_horiz" : "dashboard"}
+                  {darkMode ? "light_mode" : "dark_mode"}
                 </span>
-                <span>
-                  {isDashboardRoute ? t("header.goToMovements") : t("header.goToDashboard")}
-                </span>
-              </Link>
-            )}
+              </button>
 
-            <div className="app-avatar" title={displayName}>
-              {user?.photoURL ? (
-                <img src={user.photoURL} alt={displayName} />
+              {isMovementsRoute ? (
+                <button
+                  type="button"
+                  className="adia-button adia-button-primary"
+                  onClick={openTransactionModal}
+                >
+                  <span className="material-symbols-outlined">add</span>
+                  <span>{t("header.newTransaction")}</span>
+                </button>
               ) : (
-                avatarLabel
+                <Link
+                  to={isDashboardRoute ? "/movements" : "/dashboard"}
+                  className="adia-button adia-button-primary"
+                >
+                  <span className="material-symbols-outlined">
+                    {isDashboardRoute ? "swap_horiz" : "dashboard"}
+                  </span>
+                  <span>
+                    {isDashboardRoute ? t("header.goToMovements") : t("header.goToDashboard")}
+                  </span>
+                </Link>
               )}
+
+              <div className="app-avatar" title={displayName}>
+                {user?.photoURL ? <img src={user.photoURL} alt={displayName} /> : avatarLabel}
+              </div>
             </div>
           </div>
+
         </header>
 
         <header className="mobile-topbar">
           <div className="mobile-topbar-copy">
             <span>{t("header.goodMorning")}</span>
             <strong>{displayName}</strong>
+            {activeWorkspace ? <small>{activeWorkspace.workspaceName}</small> : null}
           </div>
 
           <div className="app-topbar-right">
@@ -292,9 +322,7 @@ const Header = () => {
         </span>
         <span className="adia-brand-copy">
           <span className="adia-brand-title">Adia Finance</span>
-          <span className="adia-brand-subtitle">
-            {t("header.brandSubtitlePublic")}
-          </span>
+          <span className="adia-brand-subtitle">{t("header.brandSubtitlePublic")}</span>
         </span>
       </Link>
 

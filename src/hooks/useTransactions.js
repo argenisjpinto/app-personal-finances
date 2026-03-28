@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useWorkspace } from "../context/WorkspaceContext";
 import { 
   addTransaction, 
   deleteTransaction, 
@@ -6,37 +8,39 @@ import {
   subscribeToTransactions
 } from "../services/apiFirebase";
 
-export const useTransactions = (user) => {
-
+export const useTransactions = () => {
+  const { user } = useAuth();
+  const { activeWorkspaceId, isLegacyMode } = useWorkspace();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (!user || !activeWorkspaceId) {
       setTransactions([]);
+      setLoading(false);
       return;
     }
 
     setLoading(true);
 
-    const unsubscribe = subscribeToTransactions(user.uid, (data) => {
+    const unsubscribe = subscribeToTransactions(activeWorkspaceId, (data) => {
       setTransactions(data);
       setLoading(false);
-    });
+    }, isLegacyMode);
 
     return () => unsubscribe();
-  }, [user]);
+  }, [activeWorkspaceId, user]);
 
   const addNewTransaction = async (transaction) => {
-    await addTransaction(user.uid, transaction);
+    await addTransaction(activeWorkspaceId, user, transaction, isLegacyMode);
   };
 
   const removeTransaction = async (id) => {
-    await deleteTransaction(user.uid, id);
+    await deleteTransaction(activeWorkspaceId, id, isLegacyMode);
   };
 
   const editTransaction = async (id, updates) => {
-    await updateTransaction(user.uid, id, updates);
+    await updateTransaction(activeWorkspaceId, id, updates, isLegacyMode);
   };
 
   return {

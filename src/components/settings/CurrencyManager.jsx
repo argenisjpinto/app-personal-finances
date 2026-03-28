@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { useAuth } from "../../context/AuthContext";
 import { useCurrencies } from "../../hooks/useCurrencies";
 import { useSettings } from "../../hooks/useSettings";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../styles/Dashboard.css";
 
 const CurrencyManager = () => {
-  const { user } = useAuth();
   const { currencies, addCurrency, updateCurrency, removeCurrency } =
-    useCurrencies(user);
-  const settings = useSettings(user);
+    useCurrencies();
+  const settings = useSettings();
   const { t } = useLanguage();
 
   const [newCurrency, setNewCurrency] = useState({

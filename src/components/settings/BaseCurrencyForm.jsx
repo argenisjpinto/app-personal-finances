@@ -2,22 +2,28 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { useCurrencies } from "../../hooks/useCurrencies";
-import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useWorkspace } from "../../context/WorkspaceContext";
 
 const BaseCurrencyForm = () => {
-  const { user } = useAuth();
-  const { currencies } = useCurrencies(user);
+  const { activeWorkspaceId, isLegacyMode } = useWorkspace();
+  const { currencies } = useCurrencies();
   const [baseCurrency, setBaseCurrency] = useState("USD");
   const { t } = useLanguage();
 
   useEffect(() => {
-    if (!user) {
+    if (!activeWorkspaceId) {
       return;
     }
 
     const fetchCurrency = async () => {
-      const reference = doc(db, "users", user.uid, "settings", "config");
+      const reference = doc(
+        db,
+        isLegacyMode ? "users" : "workspaces",
+        activeWorkspaceId,
+        "settings",
+        "config"
+      );
       const snapshot = await getDoc(reference);
 
       if (snapshot.exists()) {
@@ -26,7 +32,7 @@ const BaseCurrencyForm = () => {
     };
 
     fetchCurrency();
-  }, [user]);
+  }, [activeWorkspaceId, isLegacyMode]);
 
   const handleSave = async () => {
     if (!baseCurrency) {
@@ -53,7 +59,13 @@ const BaseCurrencyForm = () => {
     }
 
     try {
-      const reference = doc(db, "users", user.uid, "settings", "config");
+      const reference = doc(
+        db,
+        isLegacyMode ? "users" : "workspaces",
+        activeWorkspaceId,
+        "settings",
+        "config"
+      );
       await setDoc(reference, { baseCurrency }, { merge: true });
       alert(t("settings.baseSaved"));
     } catch (error) {

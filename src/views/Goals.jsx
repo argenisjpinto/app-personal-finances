@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { useAuth } from "../context/AuthContext";
+import { useWorkspace } from "../context/WorkspaceContext";
 import { useSettings } from "../hooks/useSettings";
 import { useTransactions } from "../hooks/useTransactions";
 import { useCurrencies } from "../hooks/useCurrencies";
@@ -24,9 +25,10 @@ const createGoalId = () =>
 
 const Goals = () => {
   const { user } = useAuth();
-  const settings = useSettings(user);
-  const { transactions } = useTransactions(user);
-  const { currencies } = useCurrencies(user);
+  const { activeWorkspace, activeWorkspaceId, isLegacyMode } = useWorkspace();
+  const settings = useSettings();
+  const { transactions } = useTransactions();
+  const { currencies } = useCurrencies();
   const { t, language } = useLanguage();
   const analytics = useFinancialAnalytics(transactions, settings);
   const [form, setForm] = useState(defaultGoal);
@@ -76,14 +78,20 @@ const Goals = () => {
     nextExpenseLimit = Number(expenseLimit) || 0,
     nextExpenseLimitCurrency = expenseLimitCurrency || settings.baseCurrency || "USD"
   ) => {
-    if (!user) {
+    if (!user || !activeWorkspaceId) {
       return;
     }
 
     setSaving(true);
 
     try {
-      const settingsReference = doc(db, "users", user.uid, "settings", "config");
+      const settingsReference = doc(
+        db,
+        isLegacyMode ? "users" : "workspaces",
+        activeWorkspaceId,
+        "settings",
+        "config"
+      );
       const activeGoal = nextGoals.find((goal) => goal.id === activeGoalId) || null;
 
       await updateDoc(settingsReference, {
@@ -165,6 +173,7 @@ const Goals = () => {
             {t("goals.manageTitleBefore")} <strong>{t("goals.manageTitleAccent")}</strong>
           </h2>
           <p className="settings-subtitle">{t("goals.manageDescription")}</p>
+          <p className="transaction-meta">{activeWorkspace?.workspaceName}</p>
         </div>
       </header>
 

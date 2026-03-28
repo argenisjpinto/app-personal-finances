@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { doc, collection, onSnapshot } from "firebase/firestore";
 import { db } from "../config/firebase";
+import { useWorkspace } from "../context/WorkspaceContext";
 
-export const useSettings = (user) => {
+export const useSettings = () => {
+  const { activeWorkspaceId, isLegacyMode } = useWorkspace();
   const [settings, setSettings] = useState({
     baseCurrency: "USD",
     rates: {},
@@ -14,10 +16,22 @@ export const useSettings = (user) => {
   });
 
   useEffect(() => {
-    if (!user) return;
+    if (!activeWorkspaceId) {
+      setSettings({
+        baseCurrency: "USD",
+        rates: {},
+        savingsGoal: 0,
+        expenseLimit: 0,
+        expenseLimitCurrency: "USD",
+        goals: [],
+        activeGoalId: null
+      });
+      return;
+    }
 
-    const settingsRef = doc(db, "users", user.uid, "settings", "config");
-    const currenciesRef = collection(db, "users", user.uid, "currencies");
+    const scopeRoot = isLegacyMode ? "users" : "workspaces";
+    const settingsRef = doc(db, scopeRoot, activeWorkspaceId, "settings", "config");
+    const currenciesRef = collection(db, scopeRoot, activeWorkspaceId, "currencies");
 
     let currentSettingsData = {};
     let currentRates = {};
@@ -59,7 +73,7 @@ export const useSettings = (user) => {
       unsubscribeCurrencies();
     };
 
-  }, [user]);
+  }, [activeWorkspaceId, isLegacyMode]);
 
   return settings;
 };

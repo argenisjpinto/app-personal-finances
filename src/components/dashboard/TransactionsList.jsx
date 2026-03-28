@@ -86,6 +86,11 @@ const TransactionsList = ({ transactions, onDelete, onSelectEdit }) => {
                           ? t("transactions.income")
                           : t("transactions.expense")}
                       </span>
+                      {transaction.createdByName ? (
+                        <span className="transaction-meta">
+                          {transaction.createdByName}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </td>
@@ -151,6 +156,11 @@ const TransactionsList = ({ transactions, onDelete, onSelectEdit }) => {
                       ? t("transactions.income")
                       : t("transactions.expense")}
                   </span>
+                  {transaction.createdByName ? (
+                    <span className="transaction-meta">
+                      {transaction.createdByName}
+                    </span>
+                  ) : null}
                 </div>
               </div>
 

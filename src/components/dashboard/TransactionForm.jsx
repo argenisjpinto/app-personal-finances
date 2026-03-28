@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
 import { useCategories } from "../../hooks/useCategories";
 import { useCurrencies } from "../../hooks/useCurrencies";
 import { useLanguage } from "../../context/LanguageContext";
@@ -15,9 +14,8 @@ const emptyState = {
 
 const TransactionForm = ({ onAdd, onEdit, onCancel, editingTransaction }) => {
   const [formData, setFormData] = useState(emptyState);
-  const { user } = useAuth();
-  const { categories } = useCategories(user);
-  const { currencies } = useCurrencies(user);
+  const { categories } = useCategories();
+  const { currencies } = useCurrencies();
   const { t } = useLanguage();
 
   const isFormValid = formData.amount && formData.category && formData.date;

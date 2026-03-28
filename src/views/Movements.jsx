@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
 import { useTransactions } from "../hooks/useTransactions";
 import { useFilters } from "../hooks/useFilters";
 import { useToast } from "../hooks/useToast";
 import { useSettings } from "../hooks/useSettings";
 import { useLanguage } from "../context/LanguageContext";
+import { useWorkspace } from "../context/WorkspaceContext";
 import { Toast } from "../components/ui/Toast";
 import { Modal } from "../components/ui/Modal";
 import { FiltersBar } from "../components/dashboard/FiltersBar";
@@ -15,7 +15,7 @@ import { DownloadTemplateButton } from "../components/dashboard/DownloadTemplate
 import { exportToExcel } from "../services/excel/exportExcel";
 
 const Movements = () => {
-  const { user } = useAuth();
+  const { activeWorkspace, activeWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const { t } = useLanguage();
   const {
     transactions,
@@ -23,14 +23,14 @@ const Movements = () => {
     addNewTransaction,
     removeTransaction,
     editTransaction
-  } = useTransactions(user);
-  const settings = useSettings(user);
+  } = useTransactions();
+  const settings = useSettings();
   const { toast, showToast } = useToast();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [filters, setFilters] = useState(() => {
-    const saved = localStorage.getItem("movementFilters");
+    const saved = localStorage.getItem(`movementFilters:${activeWorkspaceId || "default"}`);
 
     return saved
       ? JSON.parse(saved)
@@ -44,8 +44,25 @@ const Movements = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem("movementFilters", JSON.stringify(filters));
-  }, [filters]);
+    localStorage.setItem(`movementFilters:${activeWorkspaceId || "default"}`, JSON.stringify(filters));
+  }, [activeWorkspaceId, filters]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(`movementFilters:${activeWorkspaceId || "default"}`);
+
+    if (!saved) {
+      setFilters({
+        type: "all",
+        category: "",
+        dateFrom: "",
+        dateTo: "",
+        order: "desc"
+      });
+      return;
+    }
+
+    setFilters(JSON.parse(saved));
+  }, [activeWorkspaceId]);
 
   useEffect(() => {
     const handleOpenModal = () => {
@@ -64,7 +81,7 @@ const Movements = () => {
   const editingTransaction =
     transactions.find((transaction) => transaction.id === editingId) || null;
 
-  if (loading) {
+  if (loading || workspaceLoading || !activeWorkspace) {
     return (
       <div className="dashboard-container">
         <section className="dashboard-panel">
@@ -89,6 +106,9 @@ const Movements = () => {
             {t("movements.titleBefore")} <strong>{t("movements.titleAccent")}</strong>
           </h2>
           <p className="panel-description">{t("movements.description")}</p>
+          <p className="transaction-meta">
+            {activeWorkspace.workspaceName}
+          </p>
         </div>
 
         <div className="transactions-panel-actions">

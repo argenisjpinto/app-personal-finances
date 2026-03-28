@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { useTransactions } from "../hooks/useTransactions";
 import { useSettings } from "../hooks/useSettings";
 import { useCurrencies } from "../hooks/useCurrencies";
 import { useFinancialAnalytics } from "../hooks/useFinancialAnalytics";
 import { useLanguage } from "../context/LanguageContext";
+import { useAuth } from "../context/AuthContext";
+import { useWorkspace } from "../context/WorkspaceContext";
 import { MonthlyTrendChart } from "../components/dashboard/MonthlyTrendChart";
 import { AdvancedMetricsCards } from "../components/dashboard/AdvancedMetricsCards";
 import { GoalProgressCard } from "../components/dashboard/GoalProgressCard";
@@ -82,10 +83,11 @@ const formatPercent = (value) => {
 
 function Dashboard() {
   const { user } = useAuth();
+  const { activeWorkspace, loading: workspaceLoading } = useWorkspace();
   const { t } = useLanguage();
-  const { transactions, loading } = useTransactions(user);
-  const settings = useSettings(user);
-  const { currencies } = useCurrencies(user);
+  const { transactions, loading } = useTransactions();
+  const settings = useSettings();
+  const { currencies } = useCurrencies();
   const activeCurrencies = useMemo(
     () => currencies.filter((currency) => currency.active !== false),
     [currencies]
@@ -191,7 +193,7 @@ function Dashboard() {
     return start ? formatter.format(start) : formatter.format(end);
   }, [activeRange.endDate, activeRange.startDate, periodType, t]);
 
-  if (loading) {
+  if (loading || workspaceLoading || !activeWorkspace) {
     return (
       <div className="dashboard-container">
         <section className="dashboard-panel">
@@ -238,6 +240,10 @@ function Dashboard() {
           <p className="dashboard-hero-text">
             {t("dashboard.description", { period: periodLabel })}
           </p>
+          <div className="workspace-inline-summary">
+            <span className="settings-tag">{activeWorkspace.workspaceType}</span>
+            <span className="transaction-meta">{activeWorkspace.workspaceName}</span>
+          </div>
 
           <div className="goal-frequency-row" style={{ marginTop: "18px" }}>
             {activeCurrencies.map((currency) => (

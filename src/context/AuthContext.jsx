@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { loginWithGoogle, logoutUser } from "../services/apiFirebase";
-import { initializeUserData } from "../services/apiFirebase";
 
 const AuthContext = createContext(null);
 
@@ -23,7 +22,6 @@ const AuthProvider = ({ children }) => {
     setLoading(true);
     const loggedUser = await loginWithGoogle();
     setUser(loggedUser);
-    await initializeUserData(loggedUser.uid);
     setLoading(false);
     return loggedUser;
   };

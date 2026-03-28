@@ -1,0 +1,189 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function userEmail() {
+      return isSignedIn() && request.auth.token.email != null
+        ? request.auth.token.email.lower()
+        : null;
+    }
+
+    function workspacePath(workspaceId) {
+      return /databases/$(database)/documents/workspaces/$(workspaceId);
+    }
+
+    function memberPath(workspaceId, uid) {
+      return /databases/$(database)/documents/workspaces/$(workspaceId)/members/$(uid);
+    }
+
+    function invitePath(inviteId) {
+      return /databases/$(database)/documents/workspaceInvites/$(inviteId);
+    }
+
+    function workspaceExists(workspaceId) {
+      return exists(workspacePath(workspaceId));
+    }
+
+    function isWorkspaceMember(workspaceId) {
+      return isSignedIn() && exists(memberPath(workspaceId, request.auth.uid));
+    }
+
+    function isWorkspaceOwner(workspaceId) {
+      return isWorkspaceMember(workspaceId) &&
+        get(memberPath(workspaceId, request.auth.uid)).data.role == "owner";
+    }
+
+    function isWorkspaceCreatorBootstrapping(workspaceId, memberUid) {
+      return isSignedIn()
+        && request.auth.uid == memberUid
+        && workspaceExists(workspaceId)
+        && get(workspacePath(workspaceId)).data.ownerUid == request.auth.uid
+        && request.resource.data.role == "owner";
+    }
+
+    function isInviteRecipientForMemberCreate(workspaceId, memberUid) {
+      return isSignedIn()
+        && request.auth.uid == memberUid
+        && request.resource.data.inviteId is string
+        && exists(invitePath(request.resource.data.inviteId))
+        && get(invitePath(request.resource.data.inviteId)).data.workspaceId == workspaceId
+        && get(invitePath(request.resource.data.inviteId)).data.emailLower == userEmail()
+        && get(invitePath(request.resource.data.inviteId)).data.status == "pending"
+        && request.resource.data.role == "member";
+    }
+
+    function isInviteCreator() {
+      return isSignedIn() &&
+        resource.data.invitedByUid == request.auth.uid;
+    }
+
+    function isInviteRecipient() {
+      return isSignedIn() &&
+        resource.data.emailLower is string &&
+        userEmail() != null &&
+        userEmail() == resource.data.emailLower;
+    }
+
+    function isValidWorkspaceCreate(workspaceId) {
+      return isSignedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.type in ["personal", "shared"];
+    }
+
+    function isValidInviteCreate() {
+      return isSignedIn()
+        && request.resource.data.invitedByUid == request.auth.uid
+        && request.auth.token.email != null
+        && request.resource.data.invitedByEmail is string
+        && request.resource.data.invitedByEmail.lower() == request.auth.token.email.lower()
+        && request.resource.data.emailLower is string
+        && request.resource.data.emailLower == request.resource.data.emailLower.lower()
+        && request.resource.data.workspaceId is string
+        && workspaceExists(request.resource.data.workspaceId)
+        && isWorkspaceMember(request.resource.data.workspaceId)
+        && request.resource.data.workspaceType in ["personal", "shared"]
+        && request.resource.data.status == "pending";
+    }
+
+    function isValidInviteRecipientUpdate() {
+      return isInviteRecipient()
+        && request.resource.data.workspaceId == resource.data.workspaceId
+        && request.resource.data.workspaceName == resource.data.workspaceName
+        && request.resource.data.workspaceType == resource.data.workspaceType
+        && request.resource.data.emailLower == resource.data.emailLower
+        && request.resource.data.invitedByUid == resource.data.invitedByUid
+        && request.resource.data.invitedByEmail == resource.data.invitedByEmail
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.status in ["accepted", "rejected"];
+    }
+
+    function isValidInviteCreatorUpdate() {
+      return isInviteCreator()
+        && request.resource.data.workspaceId == resource.data.workspaceId
+        && request.resource.data.workspaceName == resource.data.workspaceName
+        && request.resource.data.workspaceType == resource.data.workspaceType
+        && request.resource.data.emailLower == resource.data.emailLower
+        && request.resource.data.invitedByUid == resource.data.invitedByUid
+        && request.resource.data.invitedByEmail == resource.data.invitedByEmail
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    match /users/{userId} {
+      allow create, read, update: if isUser(userId);
+    }
+
+    match /users/{userId}/memberships/{workspaceId} {
+      allow read, create: if isUser(userId);
+      allow update, delete: if isUser(userId) || isWorkspaceOwner(workspaceId);
+    }
+
+    match /users/{userId}/transactions/{transactionId} {
+      allow read, write: if isUser(userId);
+    }
+
+    match /users/{userId}/settings/{docId} {
+      allow read, write: if isUser(userId);
+    }
+
+    match /users/{userId}/currencies/{currencyId} {
+      allow read, write: if isUser(userId);
+    }
+
+    match /users/{userId}/categories/{categoryId} {
+      allow read, write: if isUser(userId);
+    }
+
+    match /workspaces/{workspaceId} {
+      allow create: if isValidWorkspaceCreate(workspaceId);
+      allow read: if isWorkspaceMember(workspaceId);
+      allow update: if isWorkspaceMember(workspaceId);
+      allow delete: if isWorkspaceOwner(workspaceId);
+    }
+
+    match /workspaces/{workspaceId}/members/{memberUid} {
+      allow read: if isWorkspaceMember(workspaceId);
+
+      allow create: if isSignedIn() && (
+        isWorkspaceOwner(workspaceId) ||
+        isWorkspaceCreatorBootstrapping(workspaceId, memberUid) ||
+        isInviteRecipientForMemberCreate(workspaceId, memberUid)
+      );
+
+      allow update: if isWorkspaceOwner(workspaceId);
+      allow delete: if isWorkspaceOwner(workspaceId) || isUser(memberUid);
+    }
+
+    match /workspaces/{workspaceId}/transactions/{transactionId} {
+      allow read, write: if isWorkspaceMember(workspaceId);
+    }
+
+    match /workspaces/{workspaceId}/settings/{docId} {
+      allow read, write: if isWorkspaceMember(workspaceId);
+    }
+
+    match /workspaces/{workspaceId}/currencies/{currencyId} {
+      allow read, write: if isWorkspaceMember(workspaceId);
+    }
+
+    match /workspaces/{workspaceId}/categories/{categoryId} {
+      allow read, write: if isWorkspaceMember(workspaceId);
+    }
+
+    match /workspaceInvites/{inviteId} {
+      allow create: if isValidInviteCreate();
+      allow read: if isInviteCreator() || isInviteRecipient();
+      allow update: if isValidInviteCreatorUpdate() || isValidInviteRecipientUpdate();
+      allow delete: if isInviteCreator();
+    }
+  }
+}

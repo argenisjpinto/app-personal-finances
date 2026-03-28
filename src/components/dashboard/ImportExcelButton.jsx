@@ -4,12 +4,14 @@ import { useAuth } from "../../context/AuthContext";
 import { useCategories } from "../../hooks/useCategories";
 import { useCurrencies } from "../../hooks/useCurrencies";
 import { useLanguage } from "../../context/LanguageContext";
+import { useWorkspace } from "../../context/WorkspaceContext";
 
 const ImportExcelButton = ({ showToast }) => {
   const fileInputRef = useRef(null);
   const { user } = useAuth();
-  const { categories } = useCategories(user);
-  const { currencies } = useCurrencies(user);
+  const { activeWorkspaceId, isLegacyMode } = useWorkspace();
+  const { categories } = useCategories();
+  const { currencies } = useCurrencies();
   const { t } = useLanguage();
 
   const handleFileChange = async (event) => {
@@ -20,7 +22,14 @@ const ImportExcelButton = ({ showToast }) => {
     }
 
     try {
-      const count = await importFromExcel(file, user, categories, currencies);
+      const count = await importFromExcel(
+        file,
+        user,
+        activeWorkspaceId,
+        categories,
+        currencies,
+        isLegacyMode
+      );
       showToast(t("dashboard.importSuccess", { count }), "success");
     } catch (error) {
       showToast(error.message, "error");

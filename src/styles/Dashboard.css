@@ -259,6 +259,109 @@ button {
   box-shadow: 0 4px 18px rgba(0, 240, 255, 0.22);
 }
 
+.workspace-switcher {
+  display: grid;
+  gap: 10px;
+  padding: 4px;
+  border-radius: 22px;
+  background: var(--surface-high);
+  border: 1px solid var(--outline-soft);
+  width: 100%;
+}
+
+.workspace-switcher-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.workspace-switcher-button span,
+.workspace-switcher-button small {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-switcher-button small {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.workspace-switcher-button.active {
+  background: var(--bg-deep);
+  color: var(--text-main);
+  box-shadow: var(--shadow-soft);
+}
+
+.workspace-settings-block {
+  display: grid;
+  gap: 14px;
+}
+
+.workspace-settings-inline {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.workspace-inline-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.workspace-manager-list {
+  display: grid;
+  gap: 14px;
+}
+
+.workspace-manager-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--bg-deep);
+  border: 1px solid var(--outline-faint);
+}
+
+.workspace-manager-head,
+.workspace-manager-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.workspace-manager-head strong {
+  text-transform: capitalize;
+}
+
+.workspace-manager-controls {
+  display: grid;
+  gap: 12px;
+}
+
+.sidebar-workspaces-card {
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-low);
+  border: 1px solid var(--outline-faint);
+  display: grid;
+  gap: 12px;
+}
+
 .adia-button-primary:hover,
 .hero-button:hover,
 .login-google-button:hover,
@@ -820,15 +923,23 @@ button {
   top: 0;
   left: 272px;
   right: 0;
-  height: 76px;
-  padding: 0 32px;
+  min-height: 76px;
+  padding: 12px 32px;
   z-index: 35;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 12px;
   background: var(--chrome-bg);
   backdrop-filter: blur(24px);
   box-shadow: var(--shadow-soft);
+}
+
+.app-topbar-main {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .app-topbar-left,
@@ -837,6 +948,11 @@ button {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+
+.app-topbar-left {
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .app-topbar-section-nav {
@@ -928,7 +1044,7 @@ button {
 .app-page-shell,
 .dashboard-container,
 .settings-container {
-  padding: 110px 32px 120px 304px;
+  padding: 148px 32px 120px 304px;
 }
 
 .dashboard-container,
@@ -2339,6 +2455,10 @@ button {
     box-shadow: var(--shadow-soft);
   }
 
+  .mobile-workspace-switcher {
+    display: none;
+  }
+
   .mobile-topbar-copy {
     display: flex;
     flex-direction: column;
@@ -2607,7 +2727,8 @@ button {
 
   .settings-inline-form,
   .currency-input-row,
-  .category-input-row {
+  .category-input-row,
+  .workspace-settings-inline {
     grid-template-columns: 1fr !important;
   }
 
@@ -2653,6 +2774,11 @@ button {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .mobile-topbar-copy small {
+    color: var(--text-muted);
+    font-size: 0.76rem;
   }
 
   .app-topbar-right {

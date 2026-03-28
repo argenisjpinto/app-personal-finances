@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useAuth } from "../../context/AuthContext";
 import { useCategories } from "../../hooks/useCategories";
 import { useLanguage } from "../../context/LanguageContext";
 import "../../styles/Dashboard.css";
@@ -16,8 +15,7 @@ const COLOR_PALETTE = [
 ];
 
 const CategoryManager = () => {
-  const { user } = useAuth();
-  const { categories, addCategory, removeCategory } = useCategories(user);
+  const { categories, addCategory, removeCategory } = useCategories();
   const { t } = useLanguage();
 
   const [newCategory, setNewCategory] = useState({

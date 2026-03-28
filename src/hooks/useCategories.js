@@ -12,14 +12,20 @@ import {
   limit
 } from "firebase/firestore";
 import { db } from "../config/firebase";
+import { useWorkspace } from "../context/WorkspaceContext";
 
-export const useCategories = (user) => {
+export const useCategories = () => {
+  const { activeWorkspaceId, isLegacyMode } = useWorkspace();
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!activeWorkspaceId) {
+      setCategories([]);
+      return;
+    }
 
-    const ref = collection(db, "users", user.uid, "categories");
+    const scopeRoot = isLegacyMode ? "users" : "workspaces";
+    const ref = collection(db, scopeRoot, activeWorkspaceId, "categories");
 
     const unsubscribe = onSnapshot(ref, snapshot => {
       const data = snapshot.docs
@@ -33,10 +39,10 @@ export const useCategories = (user) => {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [activeWorkspaceId, isLegacyMode]);
 
   const addCategory = async (name, type, color) => {
-    const ref = collection(db, "users", user.uid, "categories");
+    const ref = collection(db, isLegacyMode ? "users" : "workspaces", activeWorkspaceId, "categories");
 
     await addDoc(ref, {
       name,
@@ -48,7 +54,7 @@ export const useCategories = (user) => {
   };
 
   const isCategoryUsed = async (name) => {
-    const txRef = collection(db, "users", user.uid, "transactions");
+    const txRef = collection(db, isLegacyMode ? "users" : "workspaces", activeWorkspaceId, "transactions");
 
     const q = query(
       txRef,
@@ -69,7 +75,7 @@ export const useCategories = (user) => {
       return;
     }
 
-    const ref = doc(db, "users", user.uid, "categories", id);
+    const ref = doc(db, isLegacyMode ? "users" : "workspaces", activeWorkspaceId, "categories", id);
 
     await updateDoc(ref, {
       active: false
