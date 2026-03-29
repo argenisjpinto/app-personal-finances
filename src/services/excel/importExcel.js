@@ -6,6 +6,7 @@ import {
   writeBatch
 } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import { normalizeDate } from "../../utils/normalizeDate";
 
 const HEADER_MAP = {
   type: "type",
@@ -124,7 +125,7 @@ export const importFromExcel = async (
     const amount = parseAmount(row.amount);
     const category = String(row.category).trim();
     const currency = String(row.currency).trim().toUpperCase();
-    const date = String(row.date).trim();
+    const date = normalizeDate(row.date);
 
     if (!["income", "expense"].includes(type)) {
       errors.push(`Fila ${line}: type invalido`);
@@ -147,7 +148,7 @@ export const importFromExcel = async (
     }
 
     if (!date) {
-      errors.push(`Fila ${line}: date obligatoria`);
+      errors.push(`Fila ${line}: date invalida o vacia`);
     }
   });
 
@@ -172,12 +173,13 @@ export const importFromExcel = async (
     const batch = writeBatch(db);
 
     for (const row of chunk) {
+      const normalizedDate = normalizeDate(row.date);
       const data = {
         type: String(row.type).trim().toLowerCase(),
         amount: parseAmount(row.amount),
         category: String(row.category).trim(),
         currency: String(row.currency).trim().toUpperCase(),
-        date: String(row.date).trim(),
+        date: normalizedDate,
         description: String(row.description || "").trim(),
         ...(isLegacyMode ? {} : { workspaceId: scopeId }),
         createdByUid: user.uid,
