@@ -80,6 +80,7 @@ const Movements = () => {
   const visibleTransactions = useFilters(transactions, filters);
   const editingTransaction =
     transactions.find((transaction) => transaction.id === editingId) || null;
+  const transactionDefaultCurrency = settings?.baseCurrency || "USD";
 
   if (loading || workspaceLoading || !activeWorkspace) {
     return (
@@ -183,6 +184,8 @@ const Movements = () => {
         }}
       >
         <TransactionForm
+          key={editingTransaction?.id || `new-${activeWorkspaceId || "default"}-${transactionDefaultCurrency}`}
+          defaultCurrency={transactionDefaultCurrency}
           editingTransaction={editingTransaction}
           onCancel={() => {
             setShowForm(false);

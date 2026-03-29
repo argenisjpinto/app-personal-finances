@@ -2737,17 +2737,34 @@ button {
   }
 
   .modal-overlay {
-    padding: 12px;
+    padding: 12px 12px calc(104px + env(safe-area-inset-bottom));
+    align-items: flex-start;
+    overflow-y: auto;
   }
 
   .modal-content {
-    max-height: calc(100vh - 24px);
+    width: 100%;
+    max-height: calc(100dvh - 24px - env(safe-area-inset-bottom));
     overflow-y: auto;
+    margin: 0 auto;
   }
 
   .transaction-form-body {
     padding: 22px 18px;
     gap: 20px;
+  }
+
+  .transaction-form-actions {
+    position: sticky;
+    bottom: 0;
+    padding-top: 12px;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+    background: linear-gradient(
+      180deg,
+      rgba(244, 247, 251, 0) 0%,
+      var(--surface-low) 22%,
+      var(--surface-low) 100%
+    );
   }
 
   .transaction-form-chip-row,

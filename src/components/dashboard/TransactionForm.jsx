@@ -1,33 +1,41 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useCategories } from "../../hooks/useCategories";
 import { useCurrencies } from "../../hooks/useCurrencies";
 import { useLanguage } from "../../context/LanguageContext";
 
-const emptyState = {
+const createEmptyState = (currency = "USD") => ({
   type: "income",
   amount: "",
   category: "",
-  currency: "USD",
+  currency,
   date: "",
   description: ""
-};
+});
 
-const TransactionForm = ({ onAdd, onEdit, onCancel, editingTransaction }) => {
-  const [formData, setFormData] = useState(emptyState);
+const TransactionForm = ({
+  onAdd,
+  onEdit,
+  onCancel,
+  editingTransaction,
+  defaultCurrency = "USD"
+}) => {
   const { categories } = useCategories();
   const { currencies } = useCurrencies();
   const { t } = useLanguage();
+  const activeCurrencies = currencies.filter((currency) => currency.active !== false);
+  const initialCurrency =
+    editingTransaction?.currency ||
+    defaultCurrency;
+  const [formData, setFormData] = useState(() => (
+    editingTransaction
+      ? {
+          ...editingTransaction,
+          currency: editingTransaction.currency || defaultCurrency
+        }
+      : createEmptyState(initialCurrency)
+  ));
 
   const isFormValid = formData.amount && formData.category && formData.date;
-
-  useEffect(() => {
-    if (editingTransaction) {
-      setFormData(editingTransaction);
-      return;
-    }
-
-    setFormData(emptyState);
-  }, [editingTransaction]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -50,7 +58,7 @@ const TransactionForm = ({ onAdd, onEdit, onCancel, editingTransaction }) => {
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    const { id, createdAt, ...cleanData } = formData;
+    const { id: _ID, createdAt: _CREATED_AT, ...cleanData } = formData;
     const payload = {
       ...cleanData,
       amount: Number(cleanData.amount)
@@ -67,8 +75,6 @@ const TransactionForm = ({ onAdd, onEdit, onCancel, editingTransaction }) => {
   const activeCategories = categories
     .filter((category) => category.active !== false)
     .filter((category) => category.type === formData.type);
-
-  const activeCurrencies = currencies.filter((currency) => currency.active !== false);
 
   return (
     <form className="transaction-form" onSubmit={handleSubmit}>
