@@ -81,6 +81,18 @@ const formatPercent = (value) => {
   return `${value.toFixed(1)}%`;
 };
 
+const getRelativeMetricWidth = (value, reference) => {
+  const safeValue = Math.max(0, Number(value) || 0);
+  const safeReference = Math.max(0, Number(reference) || 0);
+  const maxValue = Math.max(safeValue, safeReference);
+
+  if (maxValue === 0) {
+    return "0%";
+  }
+
+  return `${(safeValue / maxValue) * 100}%`;
+};
+
 function Dashboard() {
   const { user } = useAuth();
   const { activeWorkspace, loading: workspaceLoading } = useWorkspace();
@@ -203,6 +215,15 @@ function Dashboard() {
     { value: "year", label: "Año" },
     { value: "custom", label: "Personalizado" }
   ];
+
+  const incomeBarWidth = getRelativeMetricWidth(
+    analytics.totalIncome,
+    analytics.totalExpense
+  );
+  const expenseBarWidth = getRelativeMetricWidth(
+    analytics.totalExpense,
+    analytics.totalIncome
+  );
 
   const quickActions = [
     {
@@ -386,7 +407,7 @@ function Dashboard() {
             </div>
           </div>
           <div className="metric-progress-track">
-            <div className="metric-progress-fill" style={{ width: "74%" }} />
+            <div className="metric-progress-fill" style={{ width: incomeBarWidth }} />
           </div>
         </article>
 
@@ -406,7 +427,7 @@ function Dashboard() {
             <div
               className="metric-progress-fill"
               style={{
-                width: `${Math.min(100, analytics.expenseRatio || 0)}%`,
+                width: expenseBarWidth,
                 background:
                   "linear-gradient(90deg, rgba(255, 180, 171, 0.92) 0%, rgba(255, 143, 132, 0.9) 100%)"
               }}
