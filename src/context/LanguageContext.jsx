@@ -117,6 +117,14 @@ const translations = {
     "dashboard.quickActions": "Quick actions",
     "dashboard.quickActionsDesc":
       "Keep your financial loop moving without leaving the dashboard.",
+    "dashboard.quickActionNewTransaction":
+      "Go to movements and register a new income or expense in seconds.",
+    "dashboard.quickActionManageMovements":
+      "Review, edit and filter your latest transactions from one place.",
+    "dashboard.quickActionGoals":
+      "Update savings goals and spending limits used by the dashboard.",
+    "dashboard.quickActionSettings":
+      "Adjust base currency, categories and workspace preferences.",
     "dashboard.goToMovements": "Go to movements",
     "dashboard.manageMovements": "Manage movements",
     "dashboard.upgradeTitle": "Upgrade your routine",
@@ -268,6 +276,7 @@ const translations = {
       "A quick breakdown of the categories driving your spend this period.",
     "categories.thisMonth": "This month",
     "categories.viewDetailed": "View detailed report",
+    "categories.hideDetailed": "Hide detailed report",
     "settings.kicker": "System settings",
     "settings.titleBefore": "Configure your",
     "settings.titleAccent": "workspace.",
@@ -456,6 +465,14 @@ const translations = {
     "dashboard.quickActions": "Acciones r\u00e1pidas",
     "dashboard.quickActionsDesc":
       "Mantiene tu flujo financiero activo sin salir del dashboard.",
+    "dashboard.quickActionNewTransaction":
+      "Ve a movimientos y registra un nuevo ingreso o gasto en segundos.",
+    "dashboard.quickActionManageMovements":
+      "Revisa, edita y filtra tus transacciones recientes desde un solo lugar.",
+    "dashboard.quickActionGoals":
+      "Actualiza metas de ahorro y l\u00edmites de gasto usados por el dashboard.",
+    "dashboard.quickActionSettings":
+      "Ajusta moneda base, categor\u00edas y preferencias del espacio.",
     "dashboard.goToMovements": "Ir a movimientos",
     "dashboard.manageMovements": "Gestionar movimientos",
     "dashboard.upgradeTitle": "Mejora tu rutina",
@@ -607,6 +624,7 @@ const translations = {
       "Un desglose r\u00e1pido de las categor\u00edas que m\u00e1s empujan tu gasto este per\u00edodo.",
     "categories.thisMonth": "Este mes",
     "categories.viewDetailed": "Ver reporte detallado",
+    "categories.hideDetailed": "Ocultar reporte detallado",
     "settings.kicker": "Configuraci\u00f3n del sistema",
     "settings.titleBefore": "Configura tu",
     "settings.titleAccent": "espacio.",

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -5,8 +6,10 @@ const DEFAULT_COLORS = ["#00F0FF", "#FED639", "#353436", "#7DF4FF"];
 
 const CategoryAnalyticsTable = ({ analytics, currency }) => {
   const { t } = useLanguage();
+  const [showDetailedReport, setShowDetailedReport] = useState(false);
   const breakdown = analytics?.categoryBreakdown || [];
   const topCategories = breakdown.slice(0, 3);
+  const visibleCategories = showDetailedReport ? breakdown : topCategories;
 
   if (!topCategories.length) {
     return null;
@@ -38,15 +41,15 @@ const CategoryAnalyticsTable = ({ analytics, currency }) => {
         </div>
 
         <div className="category-analytics-list">
-          {topCategories.map((item, index) => (
+          {visibleCategories.map((item, index) => (
             <div key={item.category} className="category-analytics-row">
               <div className="category-analytics-left">
                 <span
                   className="category-analytics-dot"
-                  style={{ background: DEFAULT_COLORS[index] }}
+                  style={{ background: DEFAULT_COLORS[index] || DEFAULT_COLORS.at(-1) }}
                 />
                 <div>
-                  <strong>{item.category}</strong>
+                  <strong>{index + 1}. {item.category}</strong>
                   <div className="transaction-meta">
                     {formatCurrency(item.amount, currency)}
                   </div>
@@ -58,17 +61,18 @@ const CategoryAnalyticsTable = ({ analytics, currency }) => {
         </div>
       </div>
 
-      <button
-        type="button"
-        className="adia-button category-analytics-button"
-        onClick={() =>
-          document
-            .getElementById("dashboard-transactions")
-            ?.scrollIntoView({ behavior: "smooth", block: "start" })
-        }
-      >
-        {t("categories.viewDetailed")}
-      </button>
+      {breakdown.length > 3 ? (
+        <button
+          type="button"
+          className="adia-button category-analytics-button"
+          onClick={() => setShowDetailedReport((current) => !current)}
+          aria-expanded={showDetailedReport}
+        >
+          {showDetailedReport
+            ? t("categories.hideDetailed")
+            : t("categories.viewDetailed")}
+        </button>
+      ) : null}
     </section>
   );
 };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTransactions } from "../hooks/useTransactions";
 import { useSettings } from "../hooks/useSettings";
@@ -95,30 +95,18 @@ function Dashboard() {
   const [displayCurrency, setDisplayCurrency] = useState("");
   const [periodType, setPeriodType] = useState("month");
   const [customRange, setCustomRange] = useState(() => getPresetRange("month"));
-
-  useEffect(() => {
-    if (!displayCurrency) {
-      setDisplayCurrency(settings?.baseCurrency || activeCurrencies[0]?.code || "USD");
-      return;
-    }
-
-    const currentCurrencyAvailable = activeCurrencies.some(
-      (currency) => currency.code === displayCurrency
-    );
-
-    if (currentCurrencyAvailable) {
-      return;
-    }
-
-    setDisplayCurrency(settings?.baseCurrency || activeCurrencies[0]?.code || "USD");
-  }, [activeCurrencies, displayCurrency, settings?.baseCurrency]);
+  const baseCurrency = activeCurrencies.some(
+    (currency) => currency.code === displayCurrency
+  )
+    ? displayCurrency
+    : settings?.baseCurrency || activeCurrencies[0]?.code || "USD";
 
   const dashboardSettings = useMemo(
     () => ({
       ...settings,
-      baseCurrency: displayCurrency || settings?.baseCurrency || "USD"
+      baseCurrency
     }),
-    [displayCurrency, settings]
+    [baseCurrency, settings]
   );
 
   const activeRange = useMemo(() => {
@@ -209,12 +197,42 @@ function Dashboard() {
     );
   }
 
-  const baseCurrency = displayCurrency || settings?.baseCurrency || "USD";
   const periodOptions = [
     { value: "week", label: "Semana" },
     { value: "month", label: "Mes" },
     { value: "year", label: "Año" },
     { value: "custom", label: "Personalizado" }
+  ];
+
+  const quickActions = [
+    {
+      title: t("dashboard.newTransaction"),
+      description: t("dashboard.quickActionNewTransaction"),
+      to: "/movements",
+      icon: "add_circle",
+      variant: "adia-button-primary"
+    },
+    {
+      title: t("dashboard.manageMovements"),
+      description: t("dashboard.quickActionManageMovements"),
+      to: "/movements",
+      icon: "swap_horiz",
+      variant: "adia-button-secondary"
+    },
+    {
+      title: t("header.goals"),
+      description: t("dashboard.quickActionGoals"),
+      to: "/goals",
+      icon: "track_changes",
+      variant: "adia-button-secondary"
+    },
+    {
+      title: t("header.settings"),
+      description: t("dashboard.quickActionSettings"),
+      to: "/settings",
+      icon: "settings",
+      variant: "adia-button-secondary"
+    }
   ];
 
   const handlePeriodChange = (nextPeriod) => {
@@ -486,10 +504,24 @@ function Dashboard() {
             <p className="panel-description">{t("dashboard.quickActionsDesc")}</p>
           </div>
 
-          <div className="dashboard-actions-row">
-            <Link to="/movements" className="adia-button adia-button-primary">
-              {t("dashboard.manageMovements")}
-            </Link>
+          <div className="dashboard-actions-grid">
+            {quickActions.map((action) => (
+              <article key={action.title} className="dashboard-quick-action">
+                <div className="dashboard-quick-action-head">
+                  <span className="metric-icon">
+                    <span className="material-symbols-outlined">{action.icon}</span>
+                  </span>
+                  <div>
+                    <h4 className="dashboard-quick-action-title">{action.title}</h4>
+                    <p className="dashboard-quick-action-copy">{action.description}</p>
+                  </div>
+                </div>
+
+                <Link to={action.to} className={`adia-button ${action.variant}`}>
+                  {action.title}
+                </Link>
+              </article>
+            ))}
           </div>
         </section>
       </div>
