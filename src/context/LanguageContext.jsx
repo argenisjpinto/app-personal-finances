@@ -118,13 +118,16 @@ const translations = {
     "dashboard.quickActionsDesc":
       "Keep your financial loop moving without leaving the dashboard.",
     "dashboard.quickActionNewTransaction":
-      "Go to movements and register a new income or expense in seconds.",
-    "dashboard.quickActionManageMovements":
-      "Review, edit and filter your latest transactions from one place.",
+      "Register a new income or expense from the main flow.",
     "dashboard.quickActionGoals":
-      "Update savings goals and spending limits used by the dashboard.",
-    "dashboard.quickActionSettings":
-      "Adjust base currency, categories and workspace preferences.",
+      "Jump straight to the form to create a new savings goal.",
+    "dashboard.quickActionCurrencies":
+      "Open currency management and update active exchange options.",
+    "dashboard.quickActionWorkspaces":
+      "Manage your personal and shared spaces from one place.",
+    "dashboard.quickActionMovementsHub":
+      "Open the full movements hub with filters and editing.",
+    "dashboard.workspacesAction": "Spaces",
     "dashboard.goToMovements": "Go to movements",
     "dashboard.manageMovements": "Manage movements",
     "dashboard.upgradeTitle": "Upgrade your routine",
@@ -183,6 +186,9 @@ const translations = {
     "transactions.edit": "Edit",
     "transactions.delete": "Delete",
     "transactions.confirmDelete": "Delete this transaction?",
+    "transactions.confirmDeleteInstallmentPlan":
+      "Delete this installment purchase? {total} monthly charges will be removed.",
+    "transactions.installmentLabel": "Installment {current}/{total}",
     "transactionForm.new": "New transaction",
     "transactionForm.edit": "Edit transaction",
     "transactionForm.description":
@@ -196,6 +202,19 @@ const translations = {
     "transactionForm.descriptionLabel": "Description",
     "transactionForm.descriptionPlaceholder":
       "What happened in this transaction?",
+    "transactionForm.paymentMode": "Payment mode",
+    "transactionForm.paymentModeDescription":
+      "For installment purchases, enter the total purchase amount and how many monthly charges it should create.",
+    "transactionForm.singlePayment": "Single payment",
+    "transactionForm.installments": "Installments",
+    "transactionForm.installmentCount": "Number of installments",
+    "transactionForm.installmentPreviewTitle": "Preview",
+    "transactionForm.installmentPreviewValue": "{count} monthly expenses",
+    "transactionForm.installmentPreviewAmount": "{value} each",
+    "transactionForm.installmentRoundingNote":
+      "If needed, the last installment is adjusted automatically for rounding.",
+    "transactionForm.installmentLocked":
+      "This transaction belongs to an installment plan. Editing keeps this monthly charge only.",
     "transactionForm.cancel": "Cancel",
     "transactionForm.add": "Add transaction",
     "transactionForm.update": "Update transaction",
@@ -276,6 +295,15 @@ const translations = {
       "A quick breakdown of the categories driving your spend this period.",
     "categories.thisMonth": "This month",
     "categories.viewDetailed": "View detailed report",
+    "categories.reportTitle": "Category report",
+    "categories.reportDescription":
+      "Open a larger chart with every category, its share, and the full amount tracked in this period.",
+    "categories.totalSpent": "Tracked spending",
+    "categories.totalCategories": "Categories",
+    "categories.topCategory": "Top category",
+    "categories.centerLabel": "Selected category",
+    "categories.closeReport": "Close category report",
+    "categories.others": "Others",
     "categories.hideDetailed": "Hide detailed report",
     "settings.kicker": "System settings",
     "settings.titleBefore": "Configure your",
@@ -466,13 +494,16 @@ const translations = {
     "dashboard.quickActionsDesc":
       "Mantiene tu flujo financiero activo sin salir del dashboard.",
     "dashboard.quickActionNewTransaction":
-      "Ve a movimientos y registra un nuevo ingreso o gasto en segundos.",
-    "dashboard.quickActionManageMovements":
-      "Revisa, edita y filtra tus transacciones recientes desde un solo lugar.",
+      "Registra un nuevo ingreso o gasto desde el flujo principal.",
     "dashboard.quickActionGoals":
-      "Actualiza metas de ahorro y l\u00edmites de gasto usados por el dashboard.",
-    "dashboard.quickActionSettings":
-      "Ajusta moneda base, categor\u00edas y preferencias del espacio.",
+      "Salta directo al formulario para crear una nueva meta de ahorro.",
+    "dashboard.quickActionCurrencies":
+      "Abre la gesti\u00f3n de monedas y actualiza las opciones activas.",
+    "dashboard.quickActionWorkspaces":
+      "Gestiona tus espacios personales y compartidos desde un solo lugar.",
+    "dashboard.quickActionMovementsHub":
+      "Abre el centro completo de movimientos con filtros y edici\u00f3n.",
+    "dashboard.workspacesAction": "Espacios",
     "dashboard.goToMovements": "Ir a movimientos",
     "dashboard.manageMovements": "Gestionar movimientos",
     "dashboard.upgradeTitle": "Mejora tu rutina",
@@ -531,6 +562,9 @@ const translations = {
     "transactions.edit": "Editar",
     "transactions.delete": "Eliminar",
     "transactions.confirmDelete": "\u00bfEliminar esta transacci\u00f3n?",
+    "transactions.confirmDeleteInstallmentPlan":
+      "\u00bfEliminar esta compra en cuotas? Se borrar\u00e1n sus {total} cargos mensuales.",
+    "transactions.installmentLabel": "Cuota {current}/{total}",
     "transactionForm.new": "Nueva transacci\u00f3n",
     "transactionForm.edit": "Editar transacci\u00f3n",
     "transactionForm.description":
@@ -544,6 +578,19 @@ const translations = {
     "transactionForm.descriptionLabel": "Descripci\u00f3n",
     "transactionForm.descriptionPlaceholder":
       "\u00bfQu\u00e9 pas\u00f3 en esta transacci\u00f3n?",
+    "transactionForm.paymentMode": "Modo de pago",
+    "transactionForm.paymentModeDescription":
+      "Para compras en cuotas, ingresa el monto total de la compra y cu\u00e1ntos cargos mensuales debe generar.",
+    "transactionForm.singlePayment": "Pago \u00fanico",
+    "transactionForm.installments": "En cuotas",
+    "transactionForm.installmentCount": "Cantidad de cuotas",
+    "transactionForm.installmentPreviewTitle": "Vista previa",
+    "transactionForm.installmentPreviewValue": "{count} gastos mensuales",
+    "transactionForm.installmentPreviewAmount": "{value} cada uno",
+    "transactionForm.installmentRoundingNote":
+      "Si hace falta, la \u00faltima cuota se ajusta autom\u00e1ticamente por redondeo.",
+    "transactionForm.installmentLocked":
+      "Esta transacci\u00f3n pertenece a un plan de cuotas. La edici\u00f3n mantiene solo este cargo mensual.",
     "transactionForm.cancel": "Cancelar",
     "transactionForm.add": "Agregar transacci\u00f3n",
     "transactionForm.update": "Actualizar transacci\u00f3n",
@@ -624,6 +671,15 @@ const translations = {
       "Un desglose r\u00e1pido de las categor\u00edas que m\u00e1s empujan tu gasto este per\u00edodo.",
     "categories.thisMonth": "Este mes",
     "categories.viewDetailed": "Ver reporte detallado",
+    "categories.reportTitle": "Reporte de categor\u00edas",
+    "categories.reportDescription":
+      "Abre un gr\u00e1fico m\u00e1s grande con todas las categor\u00edas, su participaci\u00f3n y el monto completo analizado en este per\u00edodo.",
+    "categories.totalSpent": "Gasto analizado",
+    "categories.totalCategories": "Categor\u00edas",
+    "categories.topCategory": "Categor\u00eda principal",
+    "categories.centerLabel": "Categor\u00eda seleccionada",
+    "categories.closeReport": "Cerrar reporte de categor\u00edas",
+    "categories.others": "Otros",
     "categories.hideDetailed": "Ocultar reporte detallado",
     "settings.kicker": "Configuraci\u00f3n del sistema",
     "settings.titleBefore": "Configura tu",

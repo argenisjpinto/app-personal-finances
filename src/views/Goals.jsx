@@ -179,7 +179,7 @@ const Goals = () => {
 
       <div className="settings-grid">
         <div className="settings-column">
-          <section className="settings-card">
+          <section className="settings-card" id="goals-create">
             <div className="settings-card-header">
               <div>
                 <h3 className="settings-card-title">{t("goals.createTitle")}</h3>

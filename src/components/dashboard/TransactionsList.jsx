@@ -26,6 +26,19 @@ const getTransactionIcon = (transaction) => {
 
 const TransactionsList = ({ transactions, onDelete, onSelectEdit }) => {
   const { t, language } = useLanguage();
+  const getDeleteConfirmation = (transaction) =>
+    transaction.installmentPlanId
+      ? t("transactions.confirmDeleteInstallmentPlan", {
+          total: transaction.installmentCount || 1
+        })
+      : t("transactions.confirmDelete");
+  const getInstallmentMeta = (transaction) =>
+    transaction.installmentPlanId
+      ? t("transactions.installmentLabel", {
+          current: transaction.installmentNumber,
+          total: transaction.installmentCount
+        })
+      : "";
 
   const formatDate = (dateValue) => {
     if (!dateValue) {
@@ -86,6 +99,11 @@ const TransactionsList = ({ transactions, onDelete, onSelectEdit }) => {
                           ? t("transactions.income")
                           : t("transactions.expense")}
                       </span>
+                      {transaction.installmentPlanId ? (
+                        <span className="transaction-meta">
+                          {getInstallmentMeta(transaction)}
+                        </span>
+                      ) : null}
                       {transaction.createdByName ? (
                         <span className="transaction-meta">
                           {transaction.createdByName}
@@ -119,8 +137,8 @@ const TransactionsList = ({ transactions, onDelete, onSelectEdit }) => {
                       type="button"
                       className="table-action-button table-action-button-danger"
                       onClick={() => {
-                        if (window.confirm(t("transactions.confirmDelete"))) {
-                          onDelete(transaction.id);
+                        if (window.confirm(getDeleteConfirmation(transaction))) {
+                          onDelete(transaction);
                         }
                       }}
                     >
@@ -156,6 +174,11 @@ const TransactionsList = ({ transactions, onDelete, onSelectEdit }) => {
                       ? t("transactions.income")
                       : t("transactions.expense")}
                   </span>
+                  {transaction.installmentPlanId ? (
+                    <span className="transaction-meta">
+                      {getInstallmentMeta(transaction)}
+                    </span>
+                  ) : null}
                   {transaction.createdByName ? (
                     <span className="transaction-meta">
                       {transaction.createdByName}
@@ -194,8 +217,8 @@ const TransactionsList = ({ transactions, onDelete, onSelectEdit }) => {
                 type="button"
                 className="table-action-button table-action-button-danger"
                 onClick={() => {
-                  if (window.confirm(t("transactions.confirmDelete"))) {
-                    onDelete(transaction.id);
+                  if (window.confirm(getDeleteConfirmation(transaction))) {
+                    onDelete(transaction);
                   }
                 }}
               >

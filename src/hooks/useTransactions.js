@@ -3,7 +3,9 @@ import { useAuth } from "../context/AuthContext";
 import { useWorkspace } from "../context/WorkspaceContext";
 import { 
   addTransaction, 
+  addTransactions,
   deleteTransaction, 
+  deleteTransactionPlan,
   updateTransaction,
   subscribeToTransactions
 } from "../services/apiFirebase";
@@ -12,31 +14,52 @@ export const useTransactions = () => {
   const { user } = useAuth();
   const { activeWorkspaceId, isLegacyMode } = useWorkspace();
   const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [resolvedSubscriptionKey, setResolvedSubscriptionKey] = useState("");
+  const subscriptionKey =
+    user && activeWorkspaceId
+      ? `${user.uid}:${activeWorkspaceId}:${isLegacyMode ? "legacy" : "workspace"}`
+      : "";
 
   useEffect(() => {
-    if (!user || !activeWorkspaceId) {
-      setTransactions([]);
-      setLoading(false);
+    if (!subscriptionKey) {
       return;
     }
 
-    setLoading(true);
-
     const unsubscribe = subscribeToTransactions(activeWorkspaceId, (data) => {
       setTransactions(data);
-      setLoading(false);
+      setResolvedSubscriptionKey(subscriptionKey);
     }, isLegacyMode);
 
     return () => unsubscribe();
-  }, [activeWorkspaceId, user]);
+  }, [activeWorkspaceId, isLegacyMode, subscriptionKey]);
 
   const addNewTransaction = async (transaction) => {
+    if (Array.isArray(transaction)) {
+      await addTransactions(activeWorkspaceId, user, transaction, isLegacyMode);
+      return;
+    }
+
     await addTransaction(activeWorkspaceId, user, transaction, isLegacyMode);
   };
 
-  const removeTransaction = async (id) => {
-    await deleteTransaction(activeWorkspaceId, id, isLegacyMode);
+  const removeTransaction = async (transactionOrId) => {
+    if (
+      transactionOrId &&
+      typeof transactionOrId === "object" &&
+      transactionOrId.installmentPlanId
+    ) {
+      await deleteTransactionPlan(
+        activeWorkspaceId,
+        transactionOrId.installmentPlanId,
+        isLegacyMode
+      );
+      return;
+    }
+
+    const transactionId =
+      typeof transactionOrId === "object" ? transactionOrId.id : transactionOrId;
+
+    await deleteTransaction(activeWorkspaceId, transactionId, isLegacyMode);
   };
 
   const editTransaction = async (id, updates) => {
@@ -44,8 +67,8 @@ export const useTransactions = () => {
   };
 
   return {
-    transactions,
-    loading,
+    transactions: subscriptionKey ? transactions : [],
+    loading: subscriptionKey ? resolvedSubscriptionKey !== subscriptionKey : false,
     addNewTransaction,
     removeTransaction,
     editTransaction

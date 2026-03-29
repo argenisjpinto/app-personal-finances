@@ -124,7 +124,7 @@ const Settings = () => {
 
       <div className="settings-grid">
         <div className="settings-column">
-          <section className="settings-card">
+          <section className="settings-card" id="settings-workspaces">
             <div className="settings-card-header">
               <div>
                 <h3 className="settings-card-title">{t("settings.languageTitle")}</h3>
@@ -271,7 +271,9 @@ const Settings = () => {
           </section>
 
           <BaseCurrencyForm />
-          <CurrencyManager />
+          <div id="settings-currencies">
+            <CurrencyManager />
+          </div>
           <CategoryManager />
         </div>
 

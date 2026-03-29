@@ -442,8 +442,58 @@ export const addTransaction = async (scopeId, user, data, isLegacyMode = false) 
   });
 };
 
+export const addTransactions = async (scopeId, user, items, isLegacyMode = false) => {
+  const safeItems = Array.isArray(items) ? items : [];
+
+  if (!safeItems.length) {
+    return;
+  }
+
+  const collectionRef = getScopedCollectionRef(scopeId, "transactions", isLegacyMode);
+
+  for (let index = 0; index < safeItems.length; index += 400) {
+    const batch = writeBatch(db);
+
+    safeItems.slice(index, index + 400).forEach((item) => {
+      batch.set(doc(collectionRef), {
+        ...item,
+        ...(isLegacyMode ? {} : { workspaceId: scopeId }),
+        createdByUid: user.uid,
+        createdByName: user.displayName || "",
+        createdByEmail: user.email || "",
+        createdAt: serverTimestamp()
+      });
+    });
+
+    await batch.commit();
+  }
+};
+
 export const deleteTransaction = async (scopeId, id, isLegacyMode = false) => {
   await deleteDoc(getScopedDocRef(scopeId, "transactions", id, isLegacyMode));
+};
+
+export const deleteTransactionPlan = async (scopeId, installmentPlanId, isLegacyMode = false) => {
+  if (!installmentPlanId) {
+    return;
+  }
+
+  const transactionsRef = getScopedCollectionRef(scopeId, "transactions", isLegacyMode);
+  const snapshot = await getDocs(
+    query(transactionsRef, where("installmentPlanId", "==", installmentPlanId))
+  );
+
+  if (snapshot.empty) {
+    return;
+  }
+
+  for (let index = 0; index < snapshot.docs.length; index += 400) {
+    const batch = writeBatch(db);
+    snapshot.docs.slice(index, index + 400).forEach((snapshotDoc) => {
+      batch.delete(snapshotDoc.ref);
+    });
+    await batch.commit();
+  }
 };
 
 export const updateTransaction = async (scopeId, id, updates, isLegacyMode = false) => {

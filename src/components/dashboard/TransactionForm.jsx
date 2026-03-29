@@ -2,6 +2,11 @@ import { useState } from "react";
 import { useCategories } from "../../hooks/useCategories";
 import { useCurrencies } from "../../hooks/useCurrencies";
 import { useLanguage } from "../../context/LanguageContext";
+import { formatCurrency } from "../../utils/formatCurrency";
+import {
+  buildInstallmentTransactions,
+  getInstallmentPreview
+} from "../../utils/installments";
 
 const createEmptyState = (currency = "USD") => ({
   type: "income",
@@ -9,7 +14,9 @@ const createEmptyState = (currency = "USD") => ({
   category: "",
   currency,
   date: "",
-  description: ""
+  description: "",
+  paymentPlan: "single",
+  installmentCount: "3"
 });
 
 const TransactionForm = ({
@@ -30,10 +37,16 @@ const TransactionForm = ({
     editingTransaction
       ? {
           ...editingTransaction,
-          currency: editingTransaction.currency || defaultCurrency
+          currency: editingTransaction.currency || defaultCurrency,
+          paymentPlan:
+            editingTransaction.installmentCount > 1 ? "installments" : "single",
+          installmentCount: String(editingTransaction.installmentCount || 3)
         }
       : createEmptyState(initialCurrency)
   ));
+  const isInstallmentPlan = formData.type === "expense" && formData.paymentPlan === "installments";
+  const installmentCount = Math.max(1, Number(formData.installmentCount) || 1);
+  const installmentPreview = getInstallmentPreview(formData.amount, installmentCount);
 
   const isFormValid = formData.amount && formData.category && formData.date;
 
@@ -44,7 +57,8 @@ const TransactionForm = ({
       setFormData((previous) => ({
         ...previous,
         type: value,
-        category: ""
+        category: "",
+        paymentPlan: value === "expense" ? previous.paymentPlan : "single"
       }));
       return;
     }
@@ -58,16 +72,29 @@ const TransactionForm = ({
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    const { id: _ID, createdAt: _CREATED_AT, ...cleanData } = formData;
-    const payload = {
+    const {
+      id: _ID,
+      createdAt: _CREATED_AT,
+      paymentPlan: _PAYMENT_PLAN,
+      installmentCount: rawInstallmentCount,
+      ...cleanData
+    } = formData;
+    const basePayload = {
       ...cleanData,
       amount: Number(cleanData.amount)
     };
 
     if (editingTransaction?.id) {
-      onEdit(editingTransaction.id, payload);
+      onEdit(editingTransaction.id, basePayload);
       return;
     }
+
+    const payload = isInstallmentPlan
+      ? buildInstallmentTransactions({
+          ...basePayload,
+          installmentCount: rawInstallmentCount
+        })
+      : basePayload;
 
     onAdd(payload);
   };
@@ -174,6 +201,103 @@ const TransactionForm = ({
             </button>
           ))}
         </div>
+
+        {formData.type === "expense" ? (
+          <div className="transaction-form-installments">
+            <div className="transaction-form-installments-head">
+              <div>
+                <label>{t("transactionForm.paymentMode")}</label>
+                <p className="transaction-meta">
+                  {editingTransaction?.installmentPlanId
+                    ? t("transactionForm.installmentLocked")
+                    : t("transactionForm.paymentModeDescription")}
+                </p>
+              </div>
+            </div>
+
+            <div className="transaction-type-row">
+              <button
+                type="button"
+                className={
+                  formData.paymentPlan === "single"
+                    ? "transaction-type-button active"
+                    : "transaction-type-button"
+                }
+                onClick={() =>
+                  !editingTransaction?.installmentPlanId &&
+                  setFormData((previous) => ({
+                    ...previous,
+                    paymentPlan: "single"
+                  }))
+                }
+                disabled={!!editingTransaction?.installmentPlanId}
+              >
+                {t("transactionForm.singlePayment")}
+              </button>
+
+              <button
+                type="button"
+                className={
+                  formData.paymentPlan === "installments"
+                    ? "transaction-type-button active"
+                    : "transaction-type-button"
+                }
+                onClick={() =>
+                  !editingTransaction?.installmentPlanId &&
+                  setFormData((previous) => ({
+                    ...previous,
+                    paymentPlan: "installments"
+                  }))
+                }
+                disabled={!!editingTransaction?.installmentPlanId}
+              >
+                {t("transactionForm.installments")}
+              </button>
+            </div>
+
+            {isInstallmentPlan ? (
+              <div className="transaction-form-grid">
+                <div className="transaction-form-field">
+                  <label htmlFor="transaction-installments">
+                    {t("transactionForm.installmentCount")}
+                  </label>
+                  <input
+                    id="transaction-installments"
+                    type="number"
+                    min="2"
+                    max="60"
+                    name="installmentCount"
+                    value={formData.installmentCount}
+                    onChange={handleChange}
+                    disabled={!!editingTransaction?.installmentPlanId}
+                  />
+                </div>
+
+                <div className="transaction-form-field">
+                  <label>{t("transactionForm.installmentPreviewTitle")}</label>
+                  <div className="transaction-form-installment-preview">
+                    <strong>
+                      {t("transactionForm.installmentPreviewValue", {
+                        count: installmentCount
+                      })}
+                    </strong>
+                    <span>
+                      {t("transactionForm.installmentPreviewAmount", {
+                        value: formatCurrency(
+                          installmentPreview.firstAmount,
+                          formData.currency
+                        )
+                      })}
+                    </span>
+                    {installmentPreview.hasRoundingAdjustment ? (
+                      <small>{t("transactionForm.installmentRoundingNote")}</small>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="transaction-form-grid">
           <div className="transaction-form-field">

@@ -14,6 +14,20 @@ import { ImportExcelButton } from "../components/dashboard/ImportExcelButton";
 import { DownloadTemplateButton } from "../components/dashboard/DownloadTemplateButton";
 import { exportToExcel } from "../services/excel/exportExcel";
 
+const DEFAULT_FILTERS = {
+  type: "all",
+  category: "",
+  dateFrom: "",
+  dateTo: "",
+  order: "desc"
+};
+
+const getStoredFilters = (storageKey) => {
+  const saved = localStorage.getItem(storageKey);
+
+  return saved ? JSON.parse(saved) : DEFAULT_FILTERS;
+};
+
 const Movements = () => {
   const { activeWorkspace, activeWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const { t } = useLanguage();
@@ -26,43 +40,32 @@ const Movements = () => {
   } = useTransactions();
   const settings = useSettings();
   const { toast, showToast } = useToast();
+  const storageKey = `movementFilters:${activeWorkspaceId || "default"}`;
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [filters, setFilters] = useState(() => {
-    const saved = localStorage.getItem(`movementFilters:${activeWorkspaceId || "default"}`);
+  const [filtersByWorkspace, setFiltersByWorkspace] = useState(() => ({
+    [storageKey]: getStoredFilters(storageKey)
+  }));
+  const filters = filtersByWorkspace[storageKey] || getStoredFilters(storageKey);
+  const setFilters = (nextFilters) => {
+    setFiltersByWorkspace((current) => {
+      const previousFilters = current[storageKey] || getStoredFilters(storageKey);
+      const resolvedFilters =
+        typeof nextFilters === "function"
+          ? nextFilters(previousFilters)
+          : nextFilters;
 
-    return saved
-      ? JSON.parse(saved)
-      : {
-          type: "all",
-          category: "",
-          dateFrom: "",
-          dateTo: "",
-          order: "desc"
-        };
-  });
+      return {
+        ...current,
+        [storageKey]: resolvedFilters
+      };
+    });
+  };
 
   useEffect(() => {
-    localStorage.setItem(`movementFilters:${activeWorkspaceId || "default"}`, JSON.stringify(filters));
-  }, [activeWorkspaceId, filters]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(`movementFilters:${activeWorkspaceId || "default"}`);
-
-    if (!saved) {
-      setFilters({
-        type: "all",
-        category: "",
-        dateFrom: "",
-        dateTo: "",
-        order: "desc"
-      });
-      return;
-    }
-
-    setFilters(JSON.parse(saved));
-  }, [activeWorkspaceId]);
+    localStorage.setItem(storageKey, JSON.stringify(filters));
+  }, [filters, storageKey]);
 
   useEffect(() => {
     const handleOpenModal = () => {
@@ -152,8 +155,8 @@ const Movements = () => {
           <FiltersBar filters={filters} setFilters={setFilters} />
           <TransactionsList
             transactions={visibleTransactions}
-            onDelete={(id) => {
-              removeTransaction(id);
+            onDelete={async (transaction) => {
+              await removeTransaction(transaction);
               showToast(t("dashboard.deleteToast"), "error");
             }}
             onSelectEdit={(transaction) => {

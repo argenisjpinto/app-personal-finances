@@ -213,24 +213,24 @@ function Dashboard() {
       variant: "adia-button-primary"
     },
     {
-      title: t("dashboard.manageMovements"),
-      description: t("dashboard.quickActionManageMovements"),
-      to: "/movements",
-      icon: "swap_horiz",
-      variant: "adia-button-secondary"
-    },
-    {
-      title: t("header.goals"),
+      title: t("goals.createTitle"),
       description: t("dashboard.quickActionGoals"),
-      to: "/goals",
-      icon: "track_changes",
+      to: "/goals#goals-create",
+      icon: "savings",
       variant: "adia-button-secondary"
     },
     {
-      title: t("header.settings"),
-      description: t("dashboard.quickActionSettings"),
-      to: "/settings",
-      icon: "settings",
+      title: t("settings.currencyManagement"),
+      description: t("dashboard.quickActionCurrencies"),
+      to: "/settings#settings-currencies",
+      icon: "currency_exchange",
+      variant: "adia-button-secondary"
+    },
+    {
+      title: t("dashboard.workspacesAction"),
+      description: t("dashboard.quickActionWorkspaces"),
+      to: "/settings#settings-workspaces",
+      icon: "folder_shared",
       variant: "adia-button-secondary"
     }
   ];
