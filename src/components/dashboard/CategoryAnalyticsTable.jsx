@@ -46,6 +46,7 @@ const getCategoryColor = (index) => {
 const CategoryAnalyticsTable = ({ analytics, currency }) => {
   const { t, language } = useLanguage();
   const [showDetailedReport, setShowDetailedReport] = useState(false);
+  const [showTransactionsReport, setShowTransactionsReport] = useState(false);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   const breakdown = analytics?.categoryBreakdown || EMPTY_BREAKDOWN;
 
@@ -66,16 +67,11 @@ const CategoryAnalyticsTable = ({ analytics, currency }) => {
       }
     ];
   }, [breakdown, t]);
-
-  if (!breakdown.length) {
-    return null;
-  }
-
   const safeActiveCategoryIndex = Math.min(
     activeCategoryIndex,
     Math.max(breakdown.length - 1, 0)
   );
-  const activeCategory = breakdown[safeActiveCategoryIndex] || breakdown[0];
+  const activeCategory = breakdown[safeActiveCategoryIndex] || breakdown[0] || null;
   const totalTracked = breakdown.reduce((sum, item) => sum + item.amount, 0);
   const previewGradients = previewCategories
     .map((item, index, array) => {
@@ -138,6 +134,44 @@ const CategoryAnalyticsTable = ({ analytics, currency }) => {
     }
   };
   const locale = language === "es" ? "es-AR" : "en-US";
+  const selectedCategoryTransactions = useMemo(() => {
+    if (!activeCategory?.transactions?.length) {
+      return [];
+    }
+
+    return [...activeCategory.transactions].sort((left, right) => {
+      const leftDate = left.date ? new Date(`${left.date}T00:00:00`).getTime() : 0;
+      const rightDate = right.date ? new Date(`${right.date}T00:00:00`).getTime() : 0;
+
+      if (rightDate !== leftDate) {
+        return rightDate - leftDate;
+      }
+
+      return right.baseAmount - left.baseAmount;
+    });
+  }, [activeCategory]);
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) {
+      return t("transactions.noDate");
+    }
+
+    const parsed = new Date(`${dateValue}T00:00:00`);
+
+    if (Number.isNaN(parsed.getTime())) {
+      return dateValue;
+    }
+
+    return new Intl.DateTimeFormat(locale, {
+      month: "short",
+      day: "2-digit",
+      year: "numeric"
+    }).format(parsed);
+  };
+
+  if (!breakdown.length || !activeCategory) {
+    return null;
+  }
 
   return (
     <>
@@ -179,7 +213,10 @@ const CategoryAnalyticsTable = ({ analytics, currency }) => {
         <button
           type="button"
           className="adia-button category-analytics-button"
-          onClick={() => setShowDetailedReport(true)}
+          onClick={() => {
+            setShowTransactionsReport(false);
+            setShowDetailedReport(true);
+          }}
         >
           {t("categories.viewDetailed")}
         </button>
@@ -187,7 +224,10 @@ const CategoryAnalyticsTable = ({ analytics, currency }) => {
 
       <Modal
         open={showDetailedReport}
-        onClose={() => setShowDetailedReport(false)}
+        onClose={() => {
+          setShowTransactionsReport(false);
+          setShowDetailedReport(false);
+        }}
         contentClassName="category-report-modal"
       >
         <section className="category-report-shell">
@@ -201,7 +241,10 @@ const CategoryAnalyticsTable = ({ analytics, currency }) => {
             <button
               type="button"
               className="transaction-form-close"
-              onClick={() => setShowDetailedReport(false)}
+              onClick={() => {
+                setShowTransactionsReport(false);
+                setShowDetailedReport(false);
+              }}
               aria-label={t("categories.closeReport")}
             >
               <span className="material-symbols-outlined">close</span>
@@ -235,47 +278,189 @@ const CategoryAnalyticsTable = ({ analytics, currency }) => {
                     <em>{formatCurrency(activeCategory.amount, currency)}</em>
                   </div>
                 </div>
+
+                <div className="category-report-selected-card">
+                  <div>
+                    <span className="panel-kicker">{t("categories.centerLabel")}</span>
+                    <h4>{activeCategory.category}</h4>
+                    <p>
+                      {t("categories.movementsCount", {
+                        count: new Intl.NumberFormat(locale).format(
+                          selectedCategoryTransactions.length
+                        )
+                      })}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="category-report-list">
               {breakdown.map((item, index) => (
-                <button
+                <article
                   key={item.category}
-                  type="button"
                   className={
                     index === safeActiveCategoryIndex
                       ? "category-report-row active"
                       : "category-report-row"
                   }
-                  onClick={() => setActiveCategoryIndex(index)}
                 >
-                  <div className="category-report-row-main">
-                    <div className="category-report-row-label">
-                      <span
-                        className="category-analytics-dot"
-                        style={{ background: getCategoryColor(index) }}
-                      />
-                      <strong>{item.category}</strong>
+                  <button
+                    type="button"
+                    className="category-report-row-trigger"
+                    onClick={() => setActiveCategoryIndex(index)}
+                  >
+                    <div className="category-report-row-main">
+                      <div className="category-report-row-label">
+                        <span
+                          className="category-analytics-dot"
+                          style={{ background: getCategoryColor(index) }}
+                        />
+                        <strong>{item.category}</strong>
+                      </div>
+                      <strong>{item.percentage.toFixed(1)}%</strong>
                     </div>
-                    <strong>{item.percentage.toFixed(1)}%</strong>
-                  </div>
 
-                  <div className="category-report-row-meta">
-                    <span>{formatCurrency(item.amount, currency)}</span>
-                    <div className="category-report-bar">
-                      <div
-                        className="category-report-bar-fill"
-                        style={{
-                          width: `${Math.max(item.percentage, 1)}%`,
-                          background: getCategoryColor(index)
-                        }}
-                      />
+                    <div className="category-report-row-meta">
+                      <span>{formatCurrency(item.amount, currency)}</span>
+                      <div className="category-report-bar">
+                        <div
+                          className="category-report-bar-fill"
+                          style={{
+                            width: `${Math.max(item.percentage, 1)}%`,
+                            background: getCategoryColor(index)
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+
+                  {index === safeActiveCategoryIndex ? (
+                    <div className="category-report-row-actions">
+                      <span className="transaction-meta">
+                        {t("categories.movementsCount", {
+                          count: new Intl.NumberFormat(locale).format(
+                            item.transactions?.length || 0
+                          )
+                        })}
+                      </span>
+                      <button
+                        type="button"
+                        className="adia-button adia-button-primary"
+                        onClick={() => setShowTransactionsReport(true)}
+                      >
+                        {t("categories.viewMovements")}
+                      </button>
+                    </div>
+                  ) : null}
+                </article>
               ))}
             </div>
+          </div>
+        </section>
+      </Modal>
+
+      <Modal
+        open={showTransactionsReport}
+        onClose={() => setShowTransactionsReport(false)}
+        contentClassName="category-drilldown-modal"
+      >
+        <section className="category-drilldown-shell">
+          <div className="category-report-header">
+            <div>
+              <div className="panel-kicker">{t("categories.reportTitle")}</div>
+              <h3 className="dashboard-panel-title">
+                {t("categories.movementsTitle", { category: activeCategory.category })}
+              </h3>
+              <p className="panel-description">{t("categories.movementsDescription")}</p>
+            </div>
+
+            <button
+              type="button"
+              className="transaction-form-close"
+              onClick={() => setShowTransactionsReport(false)}
+              aria-label={t("categories.closeMovements")}
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <div className="category-report-summary">
+            <article className="category-report-stat">
+              <span>{t("categories.centerLabel")}</span>
+              <strong>{activeCategory.category}</strong>
+            </article>
+            <article className="category-report-stat">
+              <span>{t("categories.totalSpent")}</span>
+              <strong>{formatCurrency(activeCategory.amount, currency, locale)}</strong>
+            </article>
+            <article className="category-report-stat">
+              <span>{t("categories.movementsLabel")}</span>
+              <strong>
+                {new Intl.NumberFormat(locale).format(selectedCategoryTransactions.length)}
+              </strong>
+            </article>
+          </div>
+
+          {selectedCategoryTransactions.length ? (
+            <div className="category-drilldown-list">
+              {selectedCategoryTransactions.map((transaction) => (
+                <article
+                  key={transaction.id || `${transaction.category}-${transaction.date}-${transaction.description}`}
+                  className="category-drilldown-item"
+                >
+                  <div className="category-drilldown-item-head">
+                    <div>
+                      <h4>
+                        {transaction.description ||
+                          transaction.category ||
+                          t("transactions.transactionFallback")}
+                      </h4>
+                      <p>{transaction.category || "-"}</p>
+                    </div>
+                    <strong className="amount-expense">
+                      -{formatCurrency(Math.abs(transaction.originalAmount), transaction.currency, locale)}
+                    </strong>
+                  </div>
+
+                  <div className="category-drilldown-item-meta">
+                    <span>{formatDate(transaction.date)}</span>
+                    <span>{transaction.currency}</span>
+                    {transaction.installmentPlanId ? (
+                      <span>
+                        {t("transactions.installmentLabel", {
+                          current: transaction.installmentNumber,
+                          total: transaction.installmentCount
+                        })}
+                      </span>
+                    ) : null}
+                    {transaction.createdByName ? (
+                      <span>{transaction.createdByName}</span>
+                    ) : null}
+                  </div>
+
+                  <div className="category-drilldown-item-footer">
+                    <span>{t("categories.baseAmountLabel")}</span>
+                    <strong>{formatCurrency(transaction.baseAmount, currency, locale)}</strong>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <h3>{t("categories.movementsEmptyTitle")}</h3>
+              <p>{t("categories.movementsEmpty")}</p>
+            </div>
+          )}
+
+          <div className="category-drilldown-actions">
+            <button
+              type="button"
+              className="adia-button adia-button-secondary"
+              onClick={() => setShowTransactionsReport(false)}
+            >
+              {t("categories.closeMovements")}
+            </button>
           </div>
         </section>
       </Modal>

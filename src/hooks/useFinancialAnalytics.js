@@ -5,21 +5,22 @@ import { isTransactionInGoalRange } from "../utils/goals";
 export const useFinancialAnalytics = (transactions = [], settings) => {
   return useMemo(() => {
     const normalized = transactions.map((transaction) => {
-      const amount = toBaseCurrency(transaction.amount, transaction.currency, settings);
+      const baseAmount = toBaseCurrency(transaction.amount, transaction.currency, settings);
 
       return {
         ...transaction,
-        amount
+        originalAmount: Number(transaction.amount) || 0,
+        baseAmount
       };
     });
 
     const totalIncome = normalized
       .filter((transaction) => transaction.type === "income")
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
+      .reduce((sum, transaction) => sum + transaction.baseAmount, 0);
 
     const totalExpense = normalized
       .filter((transaction) => transaction.type === "expense")
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
+      .reduce((sum, transaction) => sum + transaction.baseAmount, 0);
 
     const balance = totalIncome - totalExpense;
     const savingsRate = totalIncome > 0 ? (balance / totalIncome) * 100 : 0;
@@ -39,9 +40,9 @@ export const useFinancialAnalytics = (transactions = [], settings) => {
       }
 
       if (transaction.type === "income") {
-        monthlyMap[month].income += transaction.amount;
+        monthlyMap[month].income += transaction.baseAmount;
       } else {
-        monthlyMap[month].expense += transaction.amount;
+        monthlyMap[month].expense += transaction.baseAmount;
       }
     });
 
@@ -60,17 +61,22 @@ export const useFinancialAnalytics = (transactions = [], settings) => {
       .filter((transaction) => transaction.type === "expense")
       .forEach((transaction) => {
         if (!categoryMap[transaction.category]) {
-          categoryMap[transaction.category] = 0;
+          categoryMap[transaction.category] = {
+            amount: 0,
+            transactions: []
+          };
         }
 
-        categoryMap[transaction.category] += transaction.amount;
+        categoryMap[transaction.category].amount += transaction.baseAmount;
+        categoryMap[transaction.category].transactions.push(transaction);
       });
 
     const categoryBreakdown = Object.entries(categoryMap)
-      .map(([category, amount]) => ({
+      .map(([category, data]) => ({
         category,
-        amount,
-        percentage: totalExpense > 0 ? (amount / totalExpense) * 100 : 0
+        amount: data.amount,
+        percentage: totalExpense > 0 ? (data.amount / totalExpense) * 100 : 0,
+        transactions: data.transactions
       }))
       .sort((a, b) => b.amount - a.amount);
 
@@ -155,11 +161,11 @@ export const useFinancialAnalytics = (transactions = [], settings) => {
 
       const goalIncome = goalTransactions
         .filter((transaction) => transaction.type === "income")
-        .reduce((sum, transaction) => sum + transaction.amount, 0);
+        .reduce((sum, transaction) => sum + transaction.baseAmount, 0);
 
       const goalExpenses = goalTransactions
         .filter((transaction) => transaction.type === "expense")
-        .reduce((sum, transaction) => sum + transaction.amount, 0);
+        .reduce((sum, transaction) => sum + transaction.baseAmount, 0);
 
       currentSavings = goalIncome - goalExpenses;
       savingsGoal = toBaseCurrency(

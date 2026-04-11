@@ -185,6 +185,7 @@ const Movements = () => {
           setShowForm(false);
           setEditingId(null);
         }}
+        contentClassName="transaction-modal-content"
       >
         <TransactionForm
           key={editingTransaction?.id || `new-${activeWorkspaceId || "default"}-${transactionDefaultCurrency}`}
