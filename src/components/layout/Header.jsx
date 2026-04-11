@@ -1,6 +1,6 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { useWorkspace } from "../../context/WorkspaceContext";
+import { useAuth } from "../../hooks/useAuth";
+import { useWorkspace } from "../../hooks/useWorkspace";
 import { useDarkMode } from "../../hooks/useDarkMode";
 import { useSettings } from "../../hooks/useSettings";
 import { useLanguage } from "../../context/LanguageContext";

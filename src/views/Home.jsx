@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { useLanguage } from "../context/LanguageContext";
 import financialPlanning from "../assets/financial-planning2.png";
 import "../styles/Dashboard.css";

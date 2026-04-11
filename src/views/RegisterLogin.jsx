@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { useLanguage } from "../context/LanguageContext";
 import adiaFinanceLogo from "../assets/adia-logo-fondo.png";
 import "../styles/Dashboard.css";
 
 const RegisterLogin = () => {
-  const { login, user } = useAuth();
+  const { login, loginAsGuest, user } = useAuth();
   const { t } = useLanguage();
   const [loggingIn, setLoggingIn] = useState(false);
+  const [enteringAsGuest, setEnteringAsGuest] = useState(false);
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -20,6 +21,15 @@ const RegisterLogin = () => {
       await login();
     } finally {
       setLoggingIn(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    try {
+      setEnteringAsGuest(true);
+      await loginAsGuest();
+    } finally {
+      setEnteringAsGuest(false);
     }
   };
 
@@ -43,15 +53,27 @@ const RegisterLogin = () => {
           </h2>
           <p className="login-subtitle">{t("login.subtitle")}</p>
 
-          <button
-            className="login-google-button"
-            type="button"
-            onClick={handleLogin}
-            disabled={loggingIn}
-          >
-            <span className="login-google-badge">G</span>
-            <span>{loggingIn ? t("login.loading") : t("login.google")}</span>
-          </button>
+          <div className="login-action-stack">
+            <button
+              className="login-google-button"
+              type="button"
+              onClick={handleLogin}
+              disabled={loggingIn || enteringAsGuest}
+            >
+              <span className="login-google-badge">G</span>
+              <span>{loggingIn ? t("login.loading") : t("login.google")}</span>
+            </button>
+
+            <button
+              className="adia-button adia-button-secondary login-guest-button"
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={loggingIn || enteringAsGuest}
+            >
+              <span className="material-symbols-outlined">devices</span>
+              <span>{enteringAsGuest ? t("login.guestLoading") : t("login.guest")}</span>
+            </button>
+          </div>
 
           <p className="login-card-copy">
             {t("login.copyBefore")} <strong>{t("login.copyAccent")}</strong>{" "}
@@ -62,6 +84,7 @@ const RegisterLogin = () => {
         <div className="login-status-row">
           <div className="login-status-pill">{t("login.firebase")}</div>
           <div className="login-status-pill">{t("login.cloud")}</div>
+          <div className="login-status-pill">{t("login.local")}</div>
           <div className="login-status-pill">{t("login.dark")}</div>
         </div>
       </main>

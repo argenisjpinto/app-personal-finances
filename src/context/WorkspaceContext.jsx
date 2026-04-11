@@ -1,5 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useAuth } from "./AuthContext";
+import { useEffect, useMemo, useState } from "react";
 import {
   createSharedWorkspaceWithInvite,
   deleteWorkspace as deleteWorkspaceService,
@@ -13,11 +12,16 @@ import {
   setLastActiveWorkspace,
   subscribeToUserMemberships
 } from "../services/apiFirebase";
-
-const WorkspaceContext = createContext(null);
+import {
+  renameGuestWorkspace,
+  setGuestLastActiveWorkspace,
+  subscribeToGuestWorkspaces
+} from "../services/localData";
+import { useAuth } from "../hooks/useAuth";
+import { WorkspaceContext } from "./workspaceContextObject";
 
 const WorkspaceProvider = ({ children }) => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isGuestMode } = useAuth();
   const [workspaces, setWorkspaces] = useState([]);
   const [activeWorkspaceId, setActiveWorkspaceIdState] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,27 +70,43 @@ const WorkspaceProvider = ({ children }) => {
     }
 
     if (!user) {
-      setWorkspaces([]);
-      setActiveWorkspaceIdState(null);
-      setIsLegacyMode(false);
-      setLoading(false);
       return;
+    }
+
+    if (isGuestMode) {
+      const unsubscribeGuest = subscribeToGuestWorkspaces((nextSnapshot) => {
+        setWorkspaces(nextSnapshot.workspaces);
+        setActiveWorkspaceIdState((currentId) => {
+          if (
+            currentId &&
+            nextSnapshot.workspaces.some((workspace) => workspace.workspaceId === currentId)
+          ) {
+            return currentId;
+          }
+
+          return (
+            nextSnapshot.activeWorkspaceId ||
+            nextSnapshot.workspaces[0]?.workspaceId ||
+            null
+          );
+        });
+        setIsLegacyMode(false);
+        setLoading(false);
+      });
+
+      return () => unsubscribeGuest();
     }
 
     let cancelled = false;
     let unsubscribeMemberships = () => {};
 
     const setup = async () => {
-      setLoading(true);
-      setIsLegacyMode(false);
       await initializeUserData(user);
       const profile = await getUserProfile(user.uid);
 
       if (cancelled) {
         return;
       }
-
-      setActiveWorkspaceIdState(profile?.lastActiveWorkspaceId || null);
 
       unsubscribeMemberships = subscribeToUserMemberships(user.uid, async (nextWorkspaces) => {
         if (cancelled) {
@@ -153,14 +173,23 @@ const WorkspaceProvider = ({ children }) => {
       cancelled = true;
       unsubscribeMemberships();
     };
-  }, [authLoading, user]);
+  }, [authLoading, isGuestMode, user]);
 
   const setActiveWorkspaceId = async (workspaceId) => {
-    if (!user?.uid || !workspaceId) {
+    if (!workspaceId) {
       return;
     }
 
     setActiveWorkspaceIdState(workspaceId);
+    if (isGuestMode) {
+      await setGuestLastActiveWorkspace(workspaceId);
+      return;
+    }
+
+    if (!user?.uid) {
+      return;
+    }
+
     if (isLegacyMode) {
       return;
     }
@@ -171,6 +200,10 @@ const WorkspaceProvider = ({ children }) => {
   const createSharedWorkspace = async ({ workspaceName, inviteEmail }) => {
     if (!user) {
       return null;
+    }
+
+    if (isGuestMode) {
+      throw new Error("El modo invitado guarda datos en este navegador y no permite espacios compartidos.");
     }
 
     if (isLegacyMode) {
@@ -192,6 +225,10 @@ const WorkspaceProvider = ({ children }) => {
       return;
     }
 
+    if (isGuestMode) {
+      throw new Error("El modo invitado no permite enviar invitaciones.");
+    }
+
     if (isLegacyMode) {
       throw new Error("Tu Firestore aun no permite invitaciones a workspaces.");
     }
@@ -205,7 +242,19 @@ const WorkspaceProvider = ({ children }) => {
   };
 
   const renameWorkspace = async (workspaceId, name) => {
-    if (!workspaceId || !name?.trim() || isLegacyMode) {
+    if (!workspaceId || !name?.trim()) {
+      return;
+    }
+
+    if (isGuestMode) {
+      await renameGuestWorkspace({
+        workspaceId,
+        name: name.trim()
+      });
+      return;
+    }
+
+    if (isLegacyMode) {
       return;
     }
 
@@ -216,7 +265,7 @@ const WorkspaceProvider = ({ children }) => {
   };
 
   const deleteWorkspace = async (workspaceId) => {
-    if (!workspaceId || isLegacyMode || workspaces.length <= 1) {
+    if (!workspaceId || isLegacyMode || workspaces.length <= 1 || isGuestMode) {
       return;
     }
 
@@ -238,24 +287,28 @@ const WorkspaceProvider = ({ children }) => {
 
   const activeWorkspace = useMemo(
     () =>
-      workspaces.find((workspace) => workspace.workspaceId === activeWorkspaceId) ||
+      (user ? workspaces : []).find((workspace) => workspace.workspaceId === activeWorkspaceId) ||
       null,
-    [activeWorkspaceId, workspaces]
+    [activeWorkspaceId, user, workspaces]
   );
+
+  const resolvedWorkspaces = user ? workspaces : [];
+  const resolvedActiveWorkspaceId = user ? activeWorkspaceId : null;
+  const resolvedLoading = authLoading ? true : user ? loading : false;
 
   return (
     <WorkspaceContext.Provider
       value={{
-        workspaces,
+        workspaces: resolvedWorkspaces,
         activeWorkspace,
-        activeWorkspaceId,
+        activeWorkspaceId: resolvedActiveWorkspaceId,
         isLegacyMode,
         setActiveWorkspaceId,
         createSharedWorkspace,
         inviteToWorkspace,
         renameWorkspace,
         deleteWorkspace,
-        loading
+        loading: resolvedLoading
       }}
     >
       {children}
@@ -263,14 +316,4 @@ const WorkspaceProvider = ({ children }) => {
   );
 };
 
-const useWorkspace = () => {
-  const context = useContext(WorkspaceContext);
-
-  if (!context) {
-    throw new Error("useWorkspace debe usarse dentro de WorkspaceProvider");
-  }
-
-  return context;
-};
-
-export { WorkspaceProvider, useWorkspace };
+export { WorkspaceProvider };

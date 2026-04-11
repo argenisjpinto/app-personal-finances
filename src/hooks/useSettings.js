@@ -1,32 +1,27 @@
 import { useEffect, useState } from "react";
-import { doc, collection, onSnapshot } from "firebase/firestore";
+import { collection, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../config/firebase";
-import { useWorkspace } from "../context/WorkspaceContext";
+import { useAuth } from "./useAuth";
+import { useWorkspace } from "./useWorkspace";
+import { DEFAULT_SETTINGS, isGuestUser, subscribeToGuestSettings } from "../services/localData";
 
 export const useSettings = () => {
   const { activeWorkspaceId, isLegacyMode } = useWorkspace();
+  const { user } = useAuth();
   const [settings, setSettings] = useState({
-    baseCurrency: "USD",
-    rates: {},
-    savingsGoal: 0,
-    expenseLimit: 0,
-    expenseLimitCurrency: "USD",
-    goals: [],
-    activeGoalId: null
+    ...DEFAULT_SETTINGS,
+    rates: {}
   });
+  const guestMode = isGuestUser(user);
 
   useEffect(() => {
     if (!activeWorkspaceId) {
-      setSettings({
-        baseCurrency: "USD",
-        rates: {},
-        savingsGoal: 0,
-        expenseLimit: 0,
-        expenseLimitCurrency: "USD",
-        goals: [],
-        activeGoalId: null
-      });
       return;
+    }
+
+    if (guestMode) {
+      const unsubscribeGuest = subscribeToGuestSettings(activeWorkspaceId, setSettings);
+      return () => unsubscribeGuest();
     }
 
     const scopeRoot = isLegacyMode ? "users" : "workspaces";
@@ -36,7 +31,6 @@ export const useSettings = () => {
     let currentSettingsData = {};
     let currentRates = {};
 
-    // 🔹 Escuchar config completo
     const unsubscribeSettings = onSnapshot(settingsRef, (snap) => {
       if (snap.exists()) {
         currentSettingsData = snap.data();
@@ -48,12 +42,11 @@ export const useSettings = () => {
       });
     });
 
-    // 🔹 Escuchar monedas activas
     const unsubscribeCurrencies = onSnapshot(currenciesRef, (snapshot) => {
       const rates = {};
 
-      snapshot.docs.forEach(doc => {
-        const data = doc.data();
+      snapshot.docs.forEach((snapshotDoc) => {
+        const data = snapshotDoc.data();
 
         if (data.active !== false) {
           rates[data.code] = data.rate;
@@ -72,8 +65,12 @@ export const useSettings = () => {
       unsubscribeSettings();
       unsubscribeCurrencies();
     };
+  }, [activeWorkspaceId, guestMode, isLegacyMode]);
 
-  }, [activeWorkspaceId, isLegacyMode]);
-
-  return settings;
+  return activeWorkspaceId
+    ? settings
+    : {
+        ...DEFAULT_SETTINGS,
+        rates: {}
+      };
 };

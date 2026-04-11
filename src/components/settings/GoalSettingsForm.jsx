@@ -3,16 +3,20 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { useSettings } from "../../hooks/useSettings";
 import { useLanguage } from "../../context/LanguageContext";
-import { useWorkspace } from "../../context/WorkspaceContext";
+import { useAuth } from "../../hooks/useAuth";
+import { useWorkspace } from "../../hooks/useWorkspace";
+import { isGuestUser, updateGuestSettings } from "../../services/localData";
 
 const GoalSettingsForm = () => {
   const { activeWorkspaceId, isLegacyMode } = useWorkspace();
   const settings = useSettings();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const locale = "es-AR";
   const [savingsGoal, setSavingsGoal] = useState(0);
   const [expenseLimit, setExpenseLimit] = useState(0);
   const [saving, setSaving] = useState(false);
+  const guestMode = isGuestUser(user);
 
   useEffect(() => {
     if (!settings) {
@@ -30,6 +34,15 @@ const GoalSettingsForm = () => {
 
     try {
       setSaving(true);
+
+      if (guestMode) {
+        await updateGuestSettings(activeWorkspaceId, {
+          savingsGoal: Number(savingsGoal),
+          expenseLimit: Number(expenseLimit)
+        });
+        alert(t("settings.goalsSaved"));
+        return;
+      }
 
       const settingsReference = doc(
         db,

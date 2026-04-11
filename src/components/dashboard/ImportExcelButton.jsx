@@ -1,10 +1,10 @@
 import { useRef } from "react";
 import { importFromExcel } from "../../services/excel/importExcel";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 import { useCategories } from "../../hooks/useCategories";
 import { useCurrencies } from "../../hooks/useCurrencies";
 import { useLanguage } from "../../context/LanguageContext";
-import { useWorkspace } from "../../context/WorkspaceContext";
+import { useWorkspace } from "../../hooks/useWorkspace";
 
 const ImportExcelButton = ({ showToast }) => {
   const fileInputRef = useRef(null);

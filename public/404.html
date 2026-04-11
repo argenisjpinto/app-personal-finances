@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirigiendo...</title>
+    <script>
+      (function () {
+        var path = window.location.pathname + window.location.search + window.location.hash;
+        window.sessionStorage.setItem("adia-finance-redirect-path", path);
+        window.location.replace("/");
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

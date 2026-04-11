@@ -4,7 +4,7 @@ import { useFilters } from "../hooks/useFilters";
 import { useToast } from "../hooks/useToast";
 import { useSettings } from "../hooks/useSettings";
 import { useLanguage } from "../context/LanguageContext";
-import { useWorkspace } from "../context/WorkspaceContext";
+import { useWorkspace } from "../hooks/useWorkspace";
 import { Toast } from "../components/ui/Toast";
 import { Modal } from "../components/ui/Modal";
 import { FiltersBar } from "../components/dashboard/FiltersBar";

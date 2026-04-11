@@ -1,9 +1,14 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { auth } from "../config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { loginWithGoogle, logoutUser } from "../services/apiFirebase";
-
-const AuthContext = createContext(null);
+import {
+  clearGuestSession,
+  getStoredGuestUser,
+  isGuestUser,
+  startGuestSession
+} from "../services/localData";
+import { AuthContext } from "./authContextObject";
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -11,7 +16,8 @@ const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+      const guestUser = getStoredGuestUser();
+      setUser(currentUser || guestUser || null);
       setLoading(false);
     });
 
@@ -20,32 +26,50 @@ const AuthProvider = ({ children }) => {
 
   const login = async () => {
     setLoading(true);
+    clearGuestSession();
     const loggedUser = await loginWithGoogle();
     setUser(loggedUser);
     setLoading(false);
     return loggedUser;
   };
 
+  const loginAsGuest = async () => {
+    setLoading(true);
+    const guestUser = startGuestSession();
+    setUser(guestUser);
+    setLoading(false);
+    return guestUser;
+  };
+
   const logout = async () => {
     setLoading(true);
+
+    if (isGuestUser(user)) {
+      clearGuestSession();
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     await logoutUser();
     setUser(null);
     setLoading(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        loginAsGuest,
+        logout,
+        loading,
+        isGuestMode: isGuestUser(user)
+      }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );
 };
 
-const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth debe usarse dentro de AuthProvider");
-  }
-  return context;
-};
-
-export { AuthProvider, useAuth };
+export { AuthProvider };

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
-import { useAuth } from "../context/AuthContext";
-import { useWorkspace } from "../context/WorkspaceContext";
+import { useAuth } from "../hooks/useAuth";
+import { useWorkspace } from "../hooks/useWorkspace";
 import { useSettings } from "../hooks/useSettings";
 import { useTransactions } from "../hooks/useTransactions";
 import { useCurrencies } from "../hooks/useCurrencies";
@@ -10,6 +10,7 @@ import { useFinancialAnalytics } from "../hooks/useFinancialAnalytics";
 import { useLanguage } from "../context/LanguageContext";
 import { formatCurrency } from "../utils/formatCurrency";
 import { formatGoalRange, getSuggestedGoalDates, resolveGoalDates } from "../utils/goals";
+import { isGuestUser, updateGuestSettings } from "../services/localData";
 
 const defaultGoal = {
   name: "",
@@ -35,6 +36,7 @@ const Goals = () => {
   const [expenseLimit, setExpenseLimit] = useState(0);
   const [expenseLimitCurrency, setExpenseLimitCurrency] = useState("");
   const [saving, setSaving] = useState(false);
+  const guestMode = isGuestUser(user);
 
   const goals = useMemo(
     () => (Array.isArray(settings.goals) ? settings.goals : []),
@@ -85,22 +87,33 @@ const Goals = () => {
     setSaving(true);
 
     try {
-      const settingsReference = doc(
-        db,
-        isLegacyMode ? "users" : "workspaces",
-        activeWorkspaceId,
-        "settings",
-        "config"
-      );
       const activeGoal = nextGoals.find((goal) => goal.id === activeGoalId) || null;
 
-      await updateDoc(settingsReference, {
-        goals: nextGoals,
-        activeGoalId,
-        expenseLimit: nextExpenseLimit,
-        expenseLimitCurrency: nextExpenseLimitCurrency,
-        savingsGoal: activeGoal?.targetAmount || 0
-      });
+      if (guestMode) {
+        await updateGuestSettings(activeWorkspaceId, {
+          goals: nextGoals,
+          activeGoalId,
+          expenseLimit: nextExpenseLimit,
+          expenseLimitCurrency: nextExpenseLimitCurrency,
+          savingsGoal: activeGoal?.targetAmount || 0
+        });
+      } else {
+        const settingsReference = doc(
+          db,
+          isLegacyMode ? "users" : "workspaces",
+          activeWorkspaceId,
+          "settings",
+          "config"
+        );
+
+        await updateDoc(settingsReference, {
+          goals: nextGoals,
+          activeGoalId,
+          expenseLimit: nextExpenseLimit,
+          expenseLimitCurrency: nextExpenseLimitCurrency,
+          savingsGoal: activeGoal?.targetAmount || 0
+        });
+      }
     } finally {
       setSaving(false);
     }

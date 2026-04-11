@@ -6,13 +6,13 @@ import { useCategories } from "../hooks/useCategories";
 import { useCurrencies } from "../hooks/useCurrencies";
 import { useSettings } from "../hooks/useSettings";
 import { useLanguage } from "../context/LanguageContext";
-import { useAuth } from "../context/AuthContext";
-import { useWorkspace } from "../context/WorkspaceContext";
+import { useAuth } from "../hooks/useAuth";
+import { useWorkspace } from "../hooks/useWorkspace";
 import { Link } from "react-router-dom";
 import "../styles/Dashboard.css";
 
 const Settings = () => {
-  const { user } = useAuth();
+  const { user, isGuestMode } = useAuth();
   const {
     activeWorkspace,
     createSharedWorkspace,
@@ -163,44 +163,50 @@ const Settings = () => {
                 Activo ahora: <strong>{activeWorkspace.workspaceName}</strong>
               </p>
 
+              {isGuestMode ? (
+                <p className="transaction-meta">{t("settings.guestWorkspaceNotice")}</p>
+              ) : null}
+
               {isLegacyMode ? (
                 <p className="transaction-meta">
                   Firestore sigue usando el modo actual por permisos. El hogar compartido quedara habilitado cuando agreguemos reglas para `workspaces`.
                 </p>
               ) : null}
 
-              {sharedWorkspace ? (
+              {!isGuestMode && sharedWorkspace ? (
                 <p className="transaction-meta">
                   Espacio hogar listo: <strong>{sharedWorkspace.workspaceName}</strong>
                 </p>
-              ) : (
+              ) : !isGuestMode ? (
                 <input
                   className="settings-input"
                   placeholder="Nombre del espacio compartido"
                   value={sharedName}
                   onChange={(event) => setSharedName(event.target.value)}
-                  disabled={isLegacyMode}
+                  disabled={isLegacyMode || isGuestMode}
                 />
-              )}
+              ) : null}
 
-              <div className="workspace-settings-inline">
-                <input
-                  className="settings-input"
-                  type="email"
-                  placeholder="mail de la persona invitada"
-                  value={inviteEmail}
-                  onChange={(event) => setInviteEmail(event.target.value)}
-                  disabled={isLegacyMode}
-                />
-                <button
-                  type="button"
-                  className="adia-button settings-save-button"
-                  onClick={handleSharedWorkspace}
-                  disabled={isLegacyMode || savingWorkspace || !inviteEmail.trim()}
-                >
-                  {sharedWorkspace ? "Invitar a este espacio" : "Crear espacio e invitar"}
-                </button>
-              </div>
+              {!isGuestMode ? (
+                <div className="workspace-settings-inline">
+                  <input
+                    className="settings-input"
+                    type="email"
+                    placeholder="mail de la persona invitada"
+                    value={inviteEmail}
+                    onChange={(event) => setInviteEmail(event.target.value)}
+                    disabled={isLegacyMode}
+                  />
+                  <button
+                    type="button"
+                    className="adia-button settings-save-button"
+                    onClick={handleSharedWorkspace}
+                    disabled={isLegacyMode || savingWorkspace || !inviteEmail.trim()}
+                  >
+                    {sharedWorkspace ? "Invitar a este espacio" : "Crear espacio e invitar"}
+                  </button>
+                </div>
+              ) : null}
 
               <div className="workspace-manager-list">
                 {workspaces.map((workspace) => (
@@ -250,7 +256,7 @@ const Settings = () => {
                           type="button"
                           className="adia-button settings-secondary-button"
                           onClick={() => handleRenameWorkspace(workspace)}
-                          disabled={isLegacyMode}
+                          disabled={isLegacyMode || isGuestMode}
                         >
                           Guardar nombre
                         </button>

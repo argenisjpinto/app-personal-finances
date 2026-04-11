@@ -7,6 +7,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { normalizeDate } from "../../utils/normalizeDate";
+import { addGuestTransactions, isGuestUser } from "../localData";
 
 const HEADER_MAP = {
   type: "type",
@@ -159,6 +160,20 @@ export const importFromExcel = async (
     );
   }
 
+  const mappedRows = rows.map((row) => ({
+    type: String(row.type).trim().toLowerCase(),
+    amount: parseAmount(row.amount),
+    category: String(row.category).trim(),
+    currency: String(row.currency).trim().toUpperCase(),
+    date: normalizeDate(row.date),
+    description: String(row.description || "").trim()
+  }));
+
+  if (isGuestUser(user)) {
+    await addGuestTransactions(scopeId, user, mappedRows);
+    return mappedRows.length;
+  }
+
   const transactionsRef = collection(
     db,
     isLegacyMode ? "users" : "workspaces",
@@ -168,27 +183,19 @@ export const importFromExcel = async (
   const chunkSize = 500;
   let totalInserted = 0;
 
-  for (let index = 0; index < rows.length; index += chunkSize) {
-    const chunk = rows.slice(index, index + chunkSize);
+  for (let index = 0; index < mappedRows.length; index += chunkSize) {
+    const chunk = mappedRows.slice(index, index + chunkSize);
     const batch = writeBatch(db);
 
     for (const row of chunk) {
-      const normalizedDate = normalizeDate(row.date);
-      const data = {
-        type: String(row.type).trim().toLowerCase(),
-        amount: parseAmount(row.amount),
-        category: String(row.category).trim(),
-        currency: String(row.currency).trim().toUpperCase(),
-        date: normalizedDate,
-        description: String(row.description || "").trim(),
+      batch.set(doc(transactionsRef), {
+        ...row,
         ...(isLegacyMode ? {} : { workspaceId: scopeId }),
         createdByUid: user.uid,
         createdByName: user.displayName || "",
         createdByEmail: user.email || "",
         createdAt: Timestamp.now()
-      };
-
-      batch.set(doc(transactionsRef), data);
+      });
     }
 
     await batch.commit();

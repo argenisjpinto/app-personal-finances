@@ -777,6 +777,17 @@ button {
   font-weight: 800;
 }
 
+.login-action-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.login-guest-button {
+  width: 100%;
+  min-height: 56px;
+  gap: 10px;
+}
+
 .login-google-badge {
   width: 28px;
   height: 28px;

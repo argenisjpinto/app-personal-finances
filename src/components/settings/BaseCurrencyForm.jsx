@@ -1,38 +1,22 @@
-import { useEffect, useState } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { useState } from "react";
+import { doc, setDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { useCurrencies } from "../../hooks/useCurrencies";
+import { useAuth } from "../../hooks/useAuth";
+import { useSettings } from "../../hooks/useSettings";
 import { useLanguage } from "../../context/LanguageContext";
-import { useWorkspace } from "../../context/WorkspaceContext";
+import { useWorkspace } from "../../hooks/useWorkspace";
+import { isGuestUser, updateGuestSettings } from "../../services/localData";
 
 const BaseCurrencyForm = () => {
   const { activeWorkspaceId, isLegacyMode } = useWorkspace();
   const { currencies } = useCurrencies();
-  const [baseCurrency, setBaseCurrency] = useState("USD");
+  const settings = useSettings();
+  const { user } = useAuth();
+  const [pendingBaseCurrency, setPendingBaseCurrency] = useState("");
   const { t } = useLanguage();
-
-  useEffect(() => {
-    if (!activeWorkspaceId) {
-      return;
-    }
-
-    const fetchCurrency = async () => {
-      const reference = doc(
-        db,
-        isLegacyMode ? "users" : "workspaces",
-        activeWorkspaceId,
-        "settings",
-        "config"
-      );
-      const snapshot = await getDoc(reference);
-
-      if (snapshot.exists()) {
-        setBaseCurrency(snapshot.data().baseCurrency || "USD");
-      }
-    };
-
-    fetchCurrency();
-  }, [activeWorkspaceId, isLegacyMode]);
+  const guestMode = isGuestUser(user);
+  const baseCurrency = pendingBaseCurrency || settings.baseCurrency || "USD";
 
   const handleSave = async () => {
     if (!baseCurrency) {
@@ -59,6 +43,12 @@ const BaseCurrencyForm = () => {
     }
 
     try {
+      if (guestMode) {
+        await updateGuestSettings(activeWorkspaceId, { baseCurrency });
+        alert(t("settings.baseSaved"));
+        return;
+      }
+
       const reference = doc(
         db,
         isLegacyMode ? "users" : "workspaces",
@@ -96,7 +86,7 @@ const BaseCurrencyForm = () => {
                 ? "base-currency-option active"
                 : "base-currency-option"
             }
-            onClick={() => setBaseCurrency(currency.code)}
+            onClick={() => setPendingBaseCurrency(currency.code)}
           >
             <span className="base-currency-code">{currency.code}</span>
             <span className="base-currency-name">

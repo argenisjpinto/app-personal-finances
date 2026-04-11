@@ -67,6 +67,8 @@ const translations = {
       "Access your financial workspace with the authentication flow already connected in Firebase.",
     "login.brandSubtitle": "Premium Wealth Management Terminal",
     "login.google": "Sign in with Google",
+    "login.guest": "Continue as guest",
+    "login.guestLoading": "Preparing local mode...",
     "login.loading": "Signing in...",
     "login.copyBefore":
       "The current product uses",
@@ -75,6 +77,7 @@ const translations = {
       "as the real login method. The premium layout is aligned to the design reference without adding flows that do not exist in the app.",
     "login.firebase": "Firebase auth",
     "login.cloud": "Cloud synced",
+    "login.local": "Local storage mode",
     "login.dark": "Dark terminal ready",
     "dashboard.loadingKicker": "Loading workspace",
     "dashboard.loadingTitle": "Syncing your financial data...",
@@ -343,6 +346,8 @@ const translations = {
     "settings.privacy": "Privacy policy",
     "settings.apiReady": "API ready data model",
     "settings.protocol": "Adia finance protocol 2026",
+    "settings.guestWorkspaceNotice":
+      "Guest mode stores your information only in this browser with local storage, so invitations and shared workspaces stay disabled.",
     "settings.baseCurrencyTitle": "Base currency",
     "settings.baseCurrencyDesc":
       "Choose the reference currency used by analytics and goals.",
@@ -455,6 +460,8 @@ const translations = {
       "Accede a tu espacio financiero con el flujo de autenticaci\u00f3n que ya est\u00e1 conectado a Firebase.",
     "login.brandSubtitle": "Terminal premium de gesti\u00f3n patrimonial",
     "login.google": "Ingresar con Google",
+    "login.guest": "Continuar como invitado",
+    "login.guestLoading": "Preparando modo local...",
     "login.loading": "Ingresando...",
     "login.copyBefore": "El producto actual usa",
     "login.copyAccent": "autenticaci\u00f3n con Google",
@@ -462,6 +469,7 @@ const translations = {
       "como m\u00e9todo real de acceso. La capa premium respeta ese flujo sin inventar pantallas que no existen en la app.",
     "login.firebase": "Auth Firebase",
     "login.cloud": "Sincronizaci\u00f3n cloud",
+    "login.local": "Modo local",
     "login.dark": "Modo oscuro listo",
     "dashboard.loadingKicker": "Cargando espacio",
     "dashboard.loadingTitle": "Sincronizando tus datos financieros...",
@@ -730,6 +738,8 @@ const translations = {
     "settings.privacy": "Pol\u00edtica de privacidad",
     "settings.apiReady": "Modelo de datos listo para API",
     "settings.protocol": "Protocolo Adia Finance 2026",
+    "settings.guestWorkspaceNotice":
+      "El modo invitado guarda tu informacion solo en este navegador con local storage, por eso las invitaciones y los espacios compartidos quedan deshabilitados.",
     "settings.baseCurrencyTitle": "Moneda base",
     "settings.baseCurrencyDesc":
       "Elige la moneda de referencia usada por la anal\u00edtica y las metas.",
